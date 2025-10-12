@@ -1,12 +1,12 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { LockKeyhole, X } from 'lucide-react';
-import axios from 'axios';
+import { verifyOtpAction, resendOtpAction } from '../actions/verifyOtp';
 
 const OTP_LENGTH = 6;
 const INITIAL_TIMER_DURATION = 60;
 
-export default function VerifyOTP({ isOpen, onClose, onOpenLogin}) {
+export default function VerifyOTP({ isOpen, onClose, onOpenLogin }) {
     const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(''));
     const [timerDuration, setTimerDuration] = useState(INITIAL_TIMER_DURATION);
     const [message, setMessage] = useState({ text: '', type: '' });
@@ -61,34 +61,38 @@ export default function VerifyOTP({ isOpen, onClose, onOpenLogin}) {
         }
     };
 
-    const handleResendCode = () => {
+    const handleResendCode = async () => {
         setTimerDuration(INITIAL_TIMER_DURATION);
-        setMessage({ text: 'A new verification code has been sent!', type: 'success' });
-        setOtp(Array(OTP_LENGTH).fill(''));
-        inputRefs.current[0]?.focus();
+        const result = await resendOtpAction(userEmail);
+
+        if (result.success) {
+            // setMessage({ text: 'A new verification code has been sent!', type: 'success' });
+            alert("A new verification code has been sent!")
+            setOtp(Array(OTP_LENGTH).fill(''));
+            inputRefs.current[0]?.focus();
+        } else {
+            setMessage({ text: result.message, type: 'error' });
+        }
     };
 
-    const handleVerifyOtp = async() => {
+    const handleVerifyOtp = async () => {
         const otpCode = otp.join('');
         if (otpCode.length !== OTP_LENGTH) return;
 
-        try {
-            setIsVerifying(true);
-            setMessage({ text: '', type: '' });
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/verify-otp`, 
-                { email: userEmail, otp: otpCode });
-            if(res.data.success) {
-                setMessage({ text: res.data.message, type: 'success' });
-                onOpenLogin();
-                onClose();
-                // localStorage.removeItem("userMail")
-            }
-        } catch (error) {
-           setMessage({ text: error.response?.data?.message || 'Verification failed', type: 'error' });
-        } finally {
-            setIsVerifying(false)
+        setIsVerifying(true);
+        setMessage({ text: '', type: '' });
+
+        const result = await verifyOtpAction(userEmail, otpCode);
+
+        if (result.success) {
+            setMessage({ text: result.message, type: 'success' });
+            onClose();
+            onOpenLogin();
+        } else {
+            setMessage({ text: result.message, type: 'error' });
         }
 
+        setIsVerifying(false);
     };
 
     const inputClasses =

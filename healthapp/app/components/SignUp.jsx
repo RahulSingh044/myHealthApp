@@ -24,6 +24,7 @@ function SignUp({ isOpen, onClose, onSwitchToLogin, onOpenOtp }) {
                 localStorage.setItem("userMail", user.email);
                 onClose();             
                 onOpenOtp();
+                setUser({})
             }
         } catch (error) {
             console.error(error);
