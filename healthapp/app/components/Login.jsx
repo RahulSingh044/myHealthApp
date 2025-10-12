@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios'
 
 function Login({ isOpen, onClose, onSwitchToSignUp }) {
 
@@ -10,15 +11,21 @@ function Login({ isOpen, onClose, onSwitchToSignUp }) {
         email:"",
         password:""
     })
+    const[loading, setLoading] = useState(false);
 
-    const handleLogin = () => {
-        console.log(user);
-        localStorage.setItem("user", JSON.stringify(user));
-        router.push('/patient')
-        setUser({
-            email:"",
-            password:""
-        })
+    const handleLogin = async() => {
+        try {
+            setLoading(true);
+            const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/login`, user);
+
+            if (res.data.success) {   
+                router.push('/patient')
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     if (!isOpen) return null;

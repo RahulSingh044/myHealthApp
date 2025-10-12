@@ -3,12 +3,14 @@ import React, { useState } from 'react'
 import { Shield } from 'lucide-react';
 import Login from './Login';
 import SignUp from './SignUp';
+import OTP from './verifyOTP';
 
 
 function Navbar() {
 
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+    const [isOtpOpen, setIsOtpOpen] = useState(false);
 
     const section = [
         { name: 'Home', link: '/' },
@@ -59,7 +61,16 @@ function Navbar() {
                     setIsSignUpOpen(false);
                     setIsLoginOpen(true);
                 }}
+                onOpenOtp={() => setIsOtpOpen(true)}
             />
+
+            <OTP
+                isOpen={isOtpOpen}
+                onClose={() => setIsOtpOpen(false)}
+                onOpenLogin={() => setIsLoginOpen(true)}
+            />
+
+
         </div>
     )
 }

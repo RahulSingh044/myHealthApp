@@ -2,26 +2,35 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react';
 import Login from './Login';
+import axios from 'axios';
+import OTP from './verifyOTP';
 
+function SignUp({ isOpen, onClose, onSwitchToLogin, onOpenOtp }) {
 
-function SignUp({ isOpen, onClose, onSwitchToLogin }) {
-
-    const [isLoginDialgoue, setIsLoginDialgue] = useState(false);
+    const [otp, setOtp] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [user, setUser] = useState({
         name: "",
         email: "",
         password: ""
     })
 
-    const handleSignup = () => {
-        console.log(user);
-        onSwitchToLogin(true);
-        setUser({
-            name: "",
-            email: "",
-            password: ""
-        })
-    }
+    const handleSignup = async () => {
+        try {
+            setLoading(true);
+            const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/register`, user);
+
+            if (res.data.success) {   
+                localStorage.setItem("userMail", user.email);
+                onClose();             
+                onOpenOtp();
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -52,7 +61,7 @@ function SignUp({ isOpen, onClose, onSwitchToLogin }) {
                     <label htmlFor="Email" className='text-md'>Email Address</label>
                     <input
                         type="email"
-                        onChange={(e) => setUser({...user, email: e.target.value})}
+                        onChange={(e) => setUser({ ...user, email: e.target.value })}
                         value={user.email}
                         name='email'
                         placeholder='you@gmail.com'
@@ -64,7 +73,7 @@ function SignUp({ isOpen, onClose, onSwitchToLogin }) {
                     <label htmlFor="password" className='text-md'>Password</label>
                     <input
                         type="password"
-                        onChange={(e) => setUser({...user, password: e.target.value})}
+                        onChange={(e) => setUser({ ...user, password: e.target.value })}
                         value={user.password}
                         placeholder='******'
                         className='w-full border border-gray-300 rounded-xl px-4 py-2 mt-1'
@@ -83,12 +92,16 @@ function SignUp({ isOpen, onClose, onSwitchToLogin }) {
                         className="text-teal-600 font-semibold cursor-pointer hover:underline"> Sign In</span>
                 </p>
             </div>
-            <Login
+            <OTP
+                isOpen={otp}
+                onClose={() => setOtp(false)}
+            />
+            {/* <Login
                 isOpen={isLoginDialgoue}
                 onClose={() => {
                     setIsLoginDialgue(false)
                     onClose();
-                }} />
+                }} /> */}
         </div>
     )
 }
