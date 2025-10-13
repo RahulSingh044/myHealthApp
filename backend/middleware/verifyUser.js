@@ -20,6 +20,7 @@ const verifyUser = async (req, res, next) => {
             // Check if user still exists
             const user = await User.findById(decoded.userId).select('+isEmailVerified');
             if (!user) {
+                res.clearCookie('token', { httpOnly: true });
                 return res.status(404).json({
                     success: false,
                     message: 'User not found.'
@@ -28,9 +29,10 @@ const verifyUser = async (req, res, next) => {
 
             // Check if user is verified
             if (!user.isEmailVerified) {
+                res.clearCookie('token', { httpOnly: true });
                 return res.status(401).json({
                     success: false,
-                    message: 'Please verify your email first.'
+                    message: 'Please re-register your email first. The verification is incomplete.'
                 });
             }
 

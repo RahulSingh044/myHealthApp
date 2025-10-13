@@ -41,21 +41,17 @@ const profileSchema = new mongoose.Schema({
             required: true
         },
         dob: {
-            type: Date,
-            required: true
+            type: Date
         },
         gender: {
             type: String,
-            required: true,
             enum: ['Male', 'Female', 'Other']
         },
         bloodGroup: {
-            type: String,
-            required: true
+            type: String
         },
         phone: {
-            type: String,
-            required: true
+            type: String
         },
         email: {
             type: String,
@@ -64,17 +60,14 @@ const profileSchema = new mongoose.Schema({
         }
     },
     insuranceInfo: {
-        type: String,
-        required: true
+        type: String
     },
     emergencyContact: {
         Name: {
-            type: String,
-            required: true
+            type: String
         },
         Phone: {
-            type: String,
-            required: true
+            type: String
         }
     },
     allergies: [allergySchema],

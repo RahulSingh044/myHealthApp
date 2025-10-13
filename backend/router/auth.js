@@ -2,17 +2,26 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/user');
 const OTP = require('../models/otp');
+const Profile = require('../models/profile');
 const jwt = require('jsonwebtoken');
 const { sendOTPEmail } = require('../middleware/nodemailer');
 const { verifyEmailConfig } = require('../middleware/nodemailer');
 const verifyUser = require('../middleware/verifyUser');
+const checkUser = require('../middleware/checkUser');
 
 // Verify email configuration
 verifyEmailConfig();
 
 
 // Register new user
-router.post('/register', async (req, res) => {
+router.post('/register', checkUser, async (req, res) => {
+    if (req.userId) {
+        return res.status(400).json({
+            success: false,
+            message: 'User already logged in.'
+        });
+    }
+
     try {
         const { name, email, password } = req.body;
 
@@ -44,6 +53,25 @@ router.post('/register', async (req, res) => {
         // Save user
         await user.save();
 
+        // Create or update Profile for this user using available details
+        try {
+            // Build minimal personalInfo using available fields
+            const personalInfo = {
+                fullName: user.name || '',
+                email: user.email
+            };
+
+            // Upsert profile: if a profile exists for this user, update name/email; otherwise create
+            await Profile.findOneAndUpdate(
+                { userId: user._id },
+                { $set: { personalInfo } },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+        } catch (profileErr) {
+            // Log profile creation error but don't block registration
+            console.error('Profile upsert error:', profileErr);
+        }
+
         // Generate and send OTP
         const otpDoc = await OTP.createOTP(email);
         await sendOTPEmail(email, otpDoc.otp);
@@ -54,7 +82,6 @@ router.post('/register', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Registration error:', error);
         res.status(500).json({
             success: false,
             message: 'Registration failed',
@@ -100,7 +127,6 @@ router.post('/verify-otp', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Email verification error:', error);
         res.status(500).json({
             success: false,
             message: 'Email verification failed',
@@ -141,7 +167,6 @@ router.post('/resend-otp', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Resend OTP error:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to resend OTP',
@@ -150,7 +175,14 @@ router.post('/resend-otp', async (req, res) => {
     }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', checkUser, async (req, res) => {
+    if (req.userId) {
+        return res.status(400).json({
+            success: false,
+            message: 'User already logged in.'
+        });
+    }
+
     try {
         const { email, password } = req.body;
         // Check if user exists
@@ -195,15 +227,16 @@ router.post('/login', async (req, res) => {
 });
 
 // Check logined status
-router.get('/status', verifyUser, async (req, res) => {
+router.get('/status', checkUser, async (req, res) => {
+    if (!req.userId) {
+        return res.status(404).json({
+            success: false,
+            message: 'No user logged in.'
+        });
+    }
+
     try {
         const user = await User.findById(req.userId).select('-_id -__v');
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
 
         res.status(200).json({
             success: true,
@@ -220,14 +253,14 @@ router.get('/status', verifyUser, async (req, res) => {
 });
 
 // Logout
-router.post('/logout', verifyUser, async (req, res) => {
-    const user = await User.findById(req.userId);
-    if (!user) {
+router.post('/logout', checkUser, async (req, res) => {
+    if (!req.userId) {
         return res.status(404).json({
             success: false,
             message: 'No user logged in.'
-        })
+        });
     }
+
     res.clearCookie('token', { httpOnly: true });
     res.status(200).json({
         success: true,
