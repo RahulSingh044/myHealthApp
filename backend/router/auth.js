@@ -67,13 +67,13 @@ router.post('/register', async (req, res) => {
 router.post('/verify-otp', async (req, res) => {
     try {
         const { email, otp } = req.body;
-        
+
         // Verify OTP
         const validity = await OTP.verifyOTP(email, otp);
-        if (!validity.success){
+        if (!validity.success) {
             return res.status(400).json(validity);
         }
-        
+
         // Update user verification status
         const user = await User.findOneAndUpdate(
             { email },
@@ -154,7 +154,7 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         // Check if user exists
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).select('+password +isEmailVerified');
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -174,10 +174,16 @@ router.post('/login', async (req, res) => {
         // Generate JWT token
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
+        res.cookie('token', token, {
+            httpOnly: true,      // can't be accessed by JS
+            secure: false,       // set true in production (HTTPS)
+            sameSite: 'lax',     // or 'none' if cross-site (and using HTTPS)
+            maxAge: 24 * 60 * 60 * 1000, // 1 day
+        });
+
         res.status(200).json({
             success: true,
-            message: 'Login successful',
-            token
+            message: 'Login successful'
         })
     } catch (error) {
         res.status(500).json({
@@ -186,6 +192,47 @@ router.post('/login', async (req, res) => {
             error: error.message
         });
     }
+});
+
+// Check logined status
+router.get('/status', verifyUser, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId).select('-_id -__v');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'User logged in',
+            user: user
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to check user status',
+            error: error.message
+        });
+    }
+});
+
+// Logout
+router.post('/logout', verifyUser, async (req, res) => {
+    const user = await User.findById(req.userId);
+    if (!user) {
+        return res.status(404).json({
+            success: false,
+            message: 'No user logged in.'
+        })
+    }
+    res.clearCookie('token', { httpOnly: true });
+    res.status(200).json({
+        success: true,
+        message: 'Logout successful'
+    });
 });
 
 //Delete User
