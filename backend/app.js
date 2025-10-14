@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
@@ -14,8 +15,13 @@ mongoose.connect(process.env.MONGO_URI, {
 const app = express();
 
 // Middleware
-app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+// Allow Next.js frontend
+app.use(cors({
+  origin: process.env.FRONTEND_URL, // your frontend URL
+  credentials: true, // allow cookies to be sent
+}));
 
 // Routes
 const authRoutes = require('./router/auth');

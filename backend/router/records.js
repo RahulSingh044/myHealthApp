@@ -263,6 +263,34 @@ router.post('/prescribed-record/add', verifyUser, async (req, res) => {
     }
 });
 
+// Update prescribed medication record
+router.put('/prescribed-record/update/:id', verifyUser, async (req, res) => {
+    try {
+        const { medicationName, dosage, frequency, startDate, prescribingDoctor } = req.body;
+
+        const prescribedRecord = await PrescribedRecord.findByIdAndUpdate(req.params.id, {
+            medicationName,
+            dosage,
+            frequency,
+            startDate,
+            prescribingDoctor
+        }, { new: true });
+
+        res.status(200).json({
+            success: true,
+            message: 'Medication record updated successfully',
+            data: prescribedRecord
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error updating medication record',
+            error: error.message
+        });
+    }
+});
+
 // Get all prescribed medication records for a user
 router.get('/prescribed-record/all', verifyUser, async (req, res) => {
     try {

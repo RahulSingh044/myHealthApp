@@ -19,15 +19,18 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters long']
+        minlength: [6, 'Password must be at least 6 characters long'],
+        select: false // do not return password field by default
     },
     isEmailVerified: {
         type: Boolean,
-        default: false
+        default: false,
+        select: false
     },
     createdAt: {
         type: Date,
-        default: Date.now
+        default: Date.now,
+        select: false
     }
 });
 
