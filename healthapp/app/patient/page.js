@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react'
 import { Plus, Shield } from 'lucide-react'
 import { LogOut, CreditCard } from 'lucide-react'
 import Navbar from './_components/Navbar'
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'
+import { userAction } from '../actions/userAction'
 
 function Home() {
 
@@ -46,17 +47,19 @@ function Home() {
 
 
     useEffect(() => {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) {
-
-            router.push('/');
-        } else {
-            setUser(user);
-            setPersonalInfo(prev => ({
-                ...prev,
-                email: user.email
-            }))
+        const getUser = async () => {
+            try{
+                const result = await userAction();
+                if(result.success) {
+                    console.log("user", result.data)
+                    setUser(result);
+                }
+            } catch (error) {
+                console.log("Error getting Current User",error)
+            }
         }
+
+        getUser();
     }, [router])
 
     const handleSave = () => {
@@ -101,13 +104,13 @@ function Home() {
         router.push('/');
     }
 
-    if (!user) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <p>Loading...</p>
-            </div>
-        );
-    }
+    // if (!user) {
+    //     return (
+    //         <div className="flex items-center justify-center min-h-screen">
+    //             <p>Loading...</p>
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className='min-h-screen bg-slate-50'>

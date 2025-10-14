@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios'
 
 function Login({ isOpen, onClose, onSwitchToSignUp }) {
 
@@ -10,15 +11,22 @@ function Login({ isOpen, onClose, onSwitchToSignUp }) {
         email:"",
         password:""
     })
+    const[loading, setLoading] = useState(false);
 
-    const handleLogin = () => {
-        console.log(user);
-        localStorage.setItem("user", JSON.stringify(user));
-        router.push('/patient')
-        setUser({
-            email:"",
-            password:""
-        })
+    const handleLogin = async() => {
+        try {
+            setLoading(true);
+            const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/login`, user);
+
+            if (res.data.success) {   
+                localStorage.setItem("token", res.data.token)
+                router.push('/patient')
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     if (!isOpen) return null;
@@ -61,7 +69,7 @@ function Login({ isOpen, onClose, onSwitchToSignUp }) {
                 <button
                     onClick={handleLogin}
                     className='w-full text-white px-4 mb-2 py-2 rounded-md border bg-teal-600 text-lg font-semibold hover:bg-teal-500 hover:text-white transition-colors duration-300'>
-                    Sign In
+                    {loading ? 'Logging...' : 'Sign In'}
                 </button>
 
                 <p className="w-full text-center text-gray-500">Don't have an Account?

@@ -1,13 +1,55 @@
 'use client';
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Navbar from '../patient/_components/Navbar';
 import { Shield, LogOut, Plus } from 'lucide-react';
+import { addPrescribedMedicationAction, getPrescribedMedicationAction } from '../actions/recordsAction';
+import PrescribedRecordsTable from '../components/PrescribedRecordsTable';
+import toast from 'react-hot-toast';
 
 function Medication() {
 
     const [activeSection, setActiveSection] = useState('Medication Prescribed');
-
     const [isPrescribedOpen, setIsPrescribedOpen] = useState(false);
+    const [prescribed, setPrescribed] = useState({
+        medicationName: '',
+        dosage: '',
+        frequency: '',
+        startDate: '',
+        prescribingDoctor: '',
+    })
+    const [medList, setMedList] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const getMed = async () => {
+            try {
+                const res = await getPrescribedMedicationAction();
+                if (res.success) {
+                    setMedList(res.data);
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        getMed();
+    }, [medList])
+
+    const handleAdd = async () => {
+        try {
+            setLoading(true);
+            const res = await addPrescribedMedicationAction(prescribed);
+            if (res.success) {
+                toast.success("Data is saved successfully");
+                setMedList(prev => [...prev, res.data]);
+                setIsPrescribedOpen(false);
+            }
+        } catch (error) {
+            toast.error("Unable to save the data");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     return (
         <div className='min-h-screen bg-slate-50'>
@@ -51,6 +93,8 @@ function Medication() {
                                         <label htmlFor="medication">Medication Name</label>
                                         <input
                                             type="text"
+                                            onChange={(e) => setPrescribed({ ...prescribed, medicationName: e.target.value })}
+                                            value={prescribed.medicationName}
                                             placeholder='e.g., Aspirin'
                                             className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                         />
@@ -59,6 +103,8 @@ function Medication() {
                                         <label htmlFor="dosage">Dosage</label>
                                         <input
                                             type="text"
+                                            onChange={(e) => setPrescribed({ ...prescribed, dosage: e.target.value })}
+                                            value={prescribed.dosage}
                                             placeholder='e.g., 100mg'
                                             className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                         />
@@ -67,6 +113,8 @@ function Medication() {
                                         <label htmlFor="frequency">Frequency</label>
                                         <input
                                             type="text"
+                                            onChange={(e) => setPrescribed({ ...prescribed, frequency: e.target.value })}
+                                            value={prescribed.frequency}
                                             placeholder='e.g., Once a day'
                                             className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                         />
@@ -75,6 +123,8 @@ function Medication() {
                                         <label htmlFor="startDate">Start Date</label>
                                         <input
                                             type="date"
+                                            onChange={(e) => setPrescribed({ ...prescribed, startDate: e.target.value })}
+                                            value={prescribed.startDate}
                                             className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                         />
                                     </div>
@@ -82,6 +132,8 @@ function Medication() {
                                         <label htmlFor="prescribedDoctor">Prescribing Doctor</label>
                                         <input
                                             type="text"
+                                            onChange={(e) => setPrescribed({ ...prescribed, prescribingDoctor: e.target.value })}
+                                            value={prescribed.prescribingDoctor}
                                             placeholder='e.g., Dr. Sayam Khajuria'
                                             className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                         />
@@ -90,12 +142,24 @@ function Medication() {
 
                                 {/* Buttons */}
                                 <div className="flex space-x-2">
-                                    <button className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors">
-                                        Add Medication
+                                    <button
+                                        onClick={handleAdd}
+                                        disabled={loading}
+                                        className={`px-4 py-2 rounded-lg transition-colors ${loading
+                                                ? 'bg-teal-300 cursor-not-allowed text-white'
+                                                : 'bg-teal-600 hover:bg-teal-700 text-white'
+                                            }`}
+                                    >
+                                        {loading ? 'Adding...' : 'Add Medication'}
                                     </button>
+
                                     <button
                                         onClick={() => setIsPrescribedOpen(false)}
-                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                                        disabled={loading}
+                                        className={`px-4 py-2 rounded-lg transition-colors ${loading
+                                                ? 'bg-gray-200 cursor-not-allowed text-gray-400'
+                                                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                                            }`}
                                     >
                                         Cancel
                                     </button>
@@ -105,7 +169,7 @@ function Medication() {
                         </div>
                     )}
                     {/* Empty state (only show when no records and form is closed) */}
-                    {!isPrescribedOpen && (
+                    {medList.length < 1 ? (
                         <div className="text-center py-12 mt-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -127,6 +191,13 @@ function Medication() {
                                 Add your medications to check for interactions
                             </p>
                         </div>
+                    ) : (
+                        <main className="p-6 bg-gray-50 min-h-screen">
+                            <h1 className="text-2xl font-semibold text-gray-800 mb-6">
+                                Prescribed Medication Records
+                            </h1>
+                            <PrescribedRecordsTable records={medList} />
+                        </main>
                     )}
                 </div>
             </div>
