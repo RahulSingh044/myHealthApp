@@ -84,7 +84,7 @@ function SignUp({ isOpen, onClose, onSwitchToLogin, onOpenOtp }) {
                 <button
                     onClick={handleSignup}
                     className='w-full text-white px-4 mb-2 py-2 rounded-md border bg-teal-600 text-lg font-semibold hover:bg-teal-500 hover:text-white transition-colors duration-300'>
-                    Create Account
+                    { loading ? 'Signing...' : 'Create Account'}
                 </button>
 
                 <p className="w-full text-center text-gray-500">Already had an Account?
@@ -97,12 +97,6 @@ function SignUp({ isOpen, onClose, onSwitchToLogin, onOpenOtp }) {
                 isOpen={otp}
                 onClose={() => setOtp(false)}
             />
-            {/* <Login
-                isOpen={isLoginDialgoue}
-                onClose={() => {
-                    setIsLoginDialgue(false)
-                    onClose();
-                }} /> */}
         </div>
     )
 }
