@@ -1,7 +1,11 @@
 'use client';
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Shield, LogOut, Copy, Check, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { QRCodeCanvas } from "qrcode.react";
 import Navbar from '../patient/_components/Navbar';
+import { generateKeyAction } from '../actions/emergencyKey';
+import toast from 'react-hot-toast';
+import UpperNavbar from '../patient/_components/UpperNavbar';
 
 function EmergencyAcess() {
 
@@ -9,31 +13,57 @@ function EmergencyAcess() {
     const [copied, setCopied] = useState(false);
     const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
     const [isVisiblePassword, setIsVisiblePassword] = useState(false);
+    const [accessKey, setAccessKey] = useState("");
 
-    const accessKey = 'A1B2-C3D4-E5F6-G7H8'
+    const qrRef = useRef();
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000";
+    const qrLink = `${backendUrl}/api/profile/emergency-access/${accessKey}`;
+
+    const accessLink = `http://localhost:3000/emergencyAccess/${accessKey}`
+
+    const downloadQR = () => {
+        const canvas = qrRef.current; 
+        if (!canvas) {
+            toast.error("Unable to download QR code");
+            return;
+        }
+        const image = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = image;
+        link.download = `emergency-access-${accessKey}.png`;
+        link.click();
+    };
+
+    const generateKey = async () => {
+        try {
+            const res = await generateKeyAction();
+            if (res.success) {
+                setAccessKey(res.data.accessKey)
+                toast.success("Access Key generated")
+            }
+            setIsEmergencyOpen(true);
+        } catch (error) {
+            console.log(error);
+            toast.error("Unable to generate the key");
+        }
+    }
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(accessKey);
+            await navigator.clipboard.writeText(accessLink);
             setCopied(true);
+            toast.success("Access Key Copied")
             setTimeout(() => setCopied(false), 1500); // reset after 1.5s
         } catch (err) {
             console.error('Failed to copy text:', err);
+            toast.error("Unable to Copy")
         }
     };
 
 
     return (
         <div className='min-h-screen bg-slate-50'>
-            <div className='w-full flex justify-between items-center py-4 px-40 bg-white border-b-2 border-gray-200'>
-                <div className='text-2xl flex items-center space-x-4 font-semibold font-serif'>
-                    <Shield className='text-green-500' /> MediLink
-                </div>
-                <div className='flex items-center space-x-4 '>
-                    <span className='text-gray-500 mr-10'> rahul@gmail.com </span>
-                    <LogOut size={20} className='mr-2' />  Sign Out
-                </div>
-            </div>
+            <UpperNavbar />
 
             <div className="w-full flex px-40 py-8 gap-6">
                 <Navbar activeSection={activeSection} setActiveSection={setActiveSection} />
@@ -90,8 +120,8 @@ function EmergencyAcess() {
 
                             {isEmergencyOpen ? (
                                 <div className=" py-4">
-                                    <div className='w-40 h-40 mx-auto bg-white border-2 border-gray-200 mb-4 rounded shadow-xl'>
-
+                                    <div className='w-40 h-40 mx-auto mb-4 shadow-xl'>
+                                        <QRCodeCanvas value={qrLink} size={160} ref={qrRef} />
                                     </div>
 
                                     <p className="text-gray-600 mb-6 text-sm">
@@ -117,7 +147,7 @@ function EmergencyAcess() {
                                         </div>
                                         <button
                                             onClick={handleCopy}
-                                            className='w-1/5 flex mt-2  items-center justify-center border border-gray-300 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors'
+                                            className='w-1/5 flex mt-2 cursor-pointer items-center justify-center border border-gray-300 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors'
                                         >
                                             {copied ? <Check size={18} className='text-green-600' /> : <Copy size={18} />}
                                         </button>
@@ -126,11 +156,13 @@ function EmergencyAcess() {
 
                                     <div className='flex gap-2 mt-5'>
                                         <button
+                                            onClick={() => generateKey()}
                                             className="bg-teal-600  w-full text-white cursor-pointer px-3 flex items-center justify-center gap-2 py-2 rounded-xl"
                                         >
                                             <RefreshCw size={16} /> Regenerate
                                         </button>
                                         <button
+                                            onClick={downloadQR}
                                             className="bg-gray-100 w-full text-gray-500 cursor-pointer px-3 flex items-center justify-center gap-2 py-2 rounded-xl"
                                         >
                                             Download QR code
@@ -179,8 +211,8 @@ function EmergencyAcess() {
                                         Generate a secure QR code and access key for emergency situations.
                                     </p>
                                     <button
-                                        onClick={() => setIsEmergencyOpen(true)}
-                                        className="flex items-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors mx-auto"
+                                        onClick={() => generateKey()}
+                                        className="flex items-center space-x-2 px-6 py-3 bg-red-600 cursor-pointer text-white rounded-lg hover:bg-red-700 transition-colors mx-auto"
                                     >
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -217,26 +249,26 @@ function EmergencyAcess() {
                     {isEmergencyOpen && (
                         <div className='w-full mt-6 rounded p-5 bg-blue-50 border-1 border-blue-200'>
                             <h1 className='text-blue-950 font-semibold'>How to use Emergency Access</h1>
-                            <ul class="flex justify-between items-center mt-4">
-                                <li class="space-x-3">
-                                    <div class="bg-blue-600 text-white rounded-lg mb-2 w-8 h-8 flex items-center justify-center flex-shrink-0 text-sm font-semibold">1</div>
+                            <ul className="flex justify-between items-center mt-4">
+                                <li className="space-x-3">
+                                    <div className="bg-blue-600 text-white rounded-lg mb-2 w-8 h-8 flex items-center justify-center flex-shrink-0 text-sm font-semibold">1</div>
                                     <div>
-                                        <p class="font-medium text-blue-950 mb-1">Print or Save</p>
-                                        <p class="text-sm text-blue-900">Download the QR code or save the access key in a secure location</p>
+                                        <p className="font-medium text-blue-950 mb-1">Print or Save</p>
+                                        <p className="text-sm text-blue-900">Download the QR code or save the access key in a secure location</p>
                                     </div>
                                 </li>
-                                <li class="space-x-3">
-                                    <div class="bg-blue-600 text-white rounded-lg mb-2 w-8 h-8 flex items-center justify-center flex-shrink-0 text-sm font-semibold">2</div>
+                                <li className="space-x-3">
+                                    <div className="bg-blue-600 text-white rounded-lg mb-2 w-8 h-8 flex items-center justify-center flex-shrink-0 text-sm font-semibold">2</div>
                                     <div>
-                                        <p class="font-medium text-blue-950 mb-1">Share in Emergency</p>
-                                        <p class="text-sm text-blue-900">Allow paramedics or doctors to scan the QR code or enter the access key</p>
+                                        <p className="font-medium text-blue-950 mb-1">Share in Emergency</p>
+                                        <p className="text-sm text-blue-900">Allow paramedics or doctors to scan the QR code or enter the access key</p>
                                     </div>
                                 </li>
-                                <li class="space-x-3">
-                                    <div class="bg-blue-600 text-white rounded-lg mb-2 w-8 h-8 flex items-center justify-center flex-shrink-0 text-sm font-semibold">2</div>
+                                <li className="space-x-3">
+                                    <div className="bg-blue-600 text-white rounded-lg mb-2 w-8 h-8 flex items-center justify-center flex-shrink-0 text-sm font-semibold">2</div>
                                     <div>
-                                        <p class="font-medium text-blue-950 mb-1">Instant Access</p>
-                                        <p class="text-sm text-blue-900">Allow paramedics or doctors to scan the QR code or enter the access key</p>
+                                        <p className="font-medium text-blue-950 mb-1">Instant Access</p>
+                                        <p className="text-sm text-blue-900">Allow paramedics or doctors to scan the QR code or enter the access key</p>
                                     </div>
                                 </li>
                             </ul>
