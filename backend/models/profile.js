@@ -21,7 +21,7 @@ const chronicConditionSchema = new mongoose.Schema({
         required: true
     },
     date: {
-        type: Date,
+        type: String,
         required: true
     },
     notes: {
@@ -41,7 +41,7 @@ const profileSchema = new mongoose.Schema({
             required: true
         },
         dob: {
-            type: Date
+            type: String
         },
         gender: {
             type: String,
@@ -59,17 +59,13 @@ const profileSchema = new mongoose.Schema({
             match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
         }
     },
+    
     insuranceInfo: {
-        type: String
+        insuranceInfo: { type: String },
+        contactName: { type: String },
+        contactNumber: { type: String }
     },
-    emergencyContact: {
-        Name: {
-            type: String
-        },
-        Phone: {
-            type: String
-        }
-    },
+
     allergies: [allergySchema],
     chronicConditions: [chronicConditionSchema],
     createdAt: {
