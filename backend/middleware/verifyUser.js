@@ -41,6 +41,7 @@ const verifyUser = async (req, res, next) => {
             next();
 
         } catch (error) {
+            res.clearCookie('token', { httpOnly: true });
             if (error.name === 'TokenExpiredError') {
                 return res.status(401).json({
                     success: false,

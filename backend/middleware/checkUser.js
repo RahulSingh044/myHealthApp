@@ -9,9 +9,18 @@ const checkUser = async (req, res, next) => {
     }
 
     const token = req.cookies.token;
+    console.log(req);
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+        // Token is invalid or expired -> clear cookie and continue as unauthenticated
+        res.clearCookie('token', { httpOnly: true });
+        next();
+        return;
+    }
 
     // Check if user still exists
     const user = await User.findById(decoded.userId).select('+isEmailVerified');
