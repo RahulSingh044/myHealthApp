@@ -5,6 +5,7 @@ import { Shield, LogOut, Plus } from 'lucide-react';
 import { addPrescribedMedicationAction, getPrescribedMedicationAction } from '../actions/recordsAction';
 import PrescribedRecordsTable from '../components/PrescribedRecordsTable';
 import toast from 'react-hot-toast';
+import UpperNavbar from '../patient/_components/UpperNavbar';
 
 function Medication() {
 
@@ -53,15 +54,7 @@ function Medication() {
 
     return (
         <div className='min-h-screen bg-slate-50'>
-            <div className='w-full flex justify-between items-center py-4 px-40 bg-white border-b-2 border-gray-200'>
-                <div className='text-2xl flex items-center space-x-4 font-semibold font-serif'>
-                    <Shield className='text-green-500' /> MediLink
-                </div>
-                <div className='flex items-center space-x-4 '>
-                    <span className='text-gray-500 mr-10'> rahul@gmail.com </span>
-                    <LogOut size={20} className='mr-2' />  Sign Out
-                </div>
-            </div>
+            <UpperNavbar />
 
             <div className="w-full flex px-40 py-8 gap-6">
                 <Navbar activeSection={activeSection} setActiveSection={setActiveSection} />
