@@ -4,11 +4,12 @@ import { X } from 'lucide-react';
 import Login from './Login';
 import axios from 'axios';
 import OTP from './verifyOTP';
+import { signupAction } from '../actions/auth';
 
 function SignUp({ isOpen, onClose, onSwitchToLogin, onOpenOtp }) {
 
     const [otp, setOtp] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [user, setUser] = useState({
         name: "",
         email: "",
@@ -18,10 +19,10 @@ function SignUp({ isOpen, onClose, onSwitchToLogin, onOpenOtp }) {
     const handleSignup = async () => {
         try {
             setLoading(true);
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/register`, user);
+            
+            const res = await signupAction(user)
 
-            if (res.data.success) {   
-                localStorage.setItem("userMail", user.email);
+            if (res.success) {   
                 onClose();             
                 onOpenOtp();
                 setUser({})

@@ -2,28 +2,35 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios'
+import toast from 'react-hot-toast';
+import { logInAction } from '../actions/auth';
 
 function Login({ isOpen, onClose, onSwitchToSignUp }) {
 
     const router = useRouter();
     const [user, setUser] = useState({
-        email:"",
-        password:""
+        email: "",
+        password: ""
     })
-    const[loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = async() => {
+    const handleLogin = async () => {
         try {
             setLoading(true);
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/login`, user);
-
-            if (res.data.success) {   
-                localStorage.setItem("token", res.data.token)
+            const res = await logInAction(user);
+            if (res.success) {
                 router.push('/patient')
+                toast.success("Welcome Back ")
             }
         } catch (error) {
-            console.error(error);
+            if (error.response?.status === 400 && error.response?.data?.message === "User already logged in.") {
+                // Redirect directly if already logged in
+                router.push('/patient');
+                toast.success("Welcome Back ")
+            } else {
+                toast.error("Unable to LogIn")
+                console.error(error);
+            }
         } finally {
             setLoading(false);
         }
@@ -46,7 +53,7 @@ function Login({ isOpen, onClose, onSwitchToSignUp }) {
                     <label htmlFor="Email" className='text-md'>Email Address</label>
                     <input
                         type="email"
-                        onChange={(e) => setUser({...user, email:e.target.value})}
+                        onChange={(e) => setUser({ ...user, email: e.target.value })}
                         value={user.email}
                         name='email'
                         placeholder='you@gmail.com'
@@ -58,7 +65,7 @@ function Login({ isOpen, onClose, onSwitchToSignUp }) {
                     <label htmlFor="password" className='text-md'>Password</label>
                     <input
                         type="password"
-                        onChange={(e) => setUser({...user, password:e.target.value})}
+                        onChange={(e) => setUser({ ...user, password: e.target.value })}
                         value={user.password}
                         name='password'
                         placeholder='******'
@@ -73,9 +80,9 @@ function Login({ isOpen, onClose, onSwitchToSignUp }) {
                 </button>
 
                 <p className="w-full text-center text-gray-500">Don't have an Account?
-                    <span 
-                    onClick={onSwitchToSignUp}
-                    className="text-teal-600 font-semibold cursor-pointer hover:underline"> Sign Up</span>
+                    <span
+                        onClick={onSwitchToSignUp}
+                        className="text-teal-600 font-semibold cursor-pointer hover:underline"> Sign Up</span>
                 </p>
             </div>
         </div>
