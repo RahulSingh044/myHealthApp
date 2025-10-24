@@ -1,10 +1,15 @@
 'use client';
 import React, { useState, useEffect } from 'react'
 import { Plus, Shield } from 'lucide-react'
-import { LogOut, CreditCard } from 'lucide-react'
+import { CreditCard } from 'lucide-react'
 import Navbar from './_components/Navbar'
 import { useRouter } from 'next/navigation'
-import { userAction } from '../actions/userAction'
+import { addAllergy, addChronic, editProfileAction, userAction } from '../actions/userAction'
+import UpperNavbar from './_components/UpperNavbar';
+import toast from 'react-hot-toast';
+import AllergyTable from '../components/AllergyTable';
+import ChronicTable from '../components/ChronicTable';
+import useUserStore from '../store/useStore';
 
 function Home() {
 
@@ -16,9 +21,10 @@ function Home() {
     const [allergies, setAllergies] = useState([]);
     const [isChronicConditionsOpen, setIsChronicConditionsOpen] = useState(false);
     const [chronicCondition, setChronicCondition] = useState([])
-    const [user, setUser] = useState(null);
-
-    const [personalInfo, setPersonalInfo] = useState({
+    const [loading, setLoading] = useState(false);
+    const setCurrentUser = useUserStore((state) => state.setCurrentUser)
+    const currentUser = useUserStore((state) =>state.currentUser)
+    const [personalInformation, setPersonalInformation] = useState({
         fullName: '',
         dob: '',
         gender: '',
@@ -45,88 +51,120 @@ function Home() {
         notes: '',
     })
 
+    const getUser = async () => {
+        try {
+            setLoading(true);
+            const result = await userAction();
+
+            if (result.success) {
+                setCurrentUser(result.data)
+                // setUser(result.data);
+            } else {
+                console.log("User not authenticated");
+                router.push("/");
+            }
+        } catch (error) {
+            console.error("Error getting current user:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        try {
+            setLoading(true);
+            const res = await editProfileAction(personalInformation, isInsuranceInfo);
+            if (res.success) {
+                toast("User updated Successfully");
+            }
+        } catch (error) {
+
+        } finally {
+            setLoading(false);
+            setIsEditable(false);
+        }
+    }
+
+    const handleAddAllergy = async () => {
+        try {
+            const isEmpty = Object.values(allergy).every(value => value.trim() === '');
+
+            if (isEmpty) {
+                alert("Please fill at least one field before adding an allergy.");
+                return;
+            }
+            setLoading(true);
+            const res = await addAllergy(allergy);
+            if (res.success) {
+                toast.success("Allergy added Successfully")
+                await getUser();
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error("Unable to add Allergy");
+        } finally {
+            setLoading(false);
+            setAllergy({ name: '', reaction: '', type: '' });
+            setIsAlergiesOpen(false);
+        }
+    };
+
+    const handleAddChronic = async () => {
+        try {
+            setLoading(true);
+            const isEmpty = Object.values(chronic).every(value => value.trim() === '');
+
+            if (isEmpty) {
+                toast.error("Please fill at least one field before adding an allergy.");
+                return;
+            }
+
+            const res = await addChronic(chronic)
+            console.log("response", res);
+            if (res.success) {
+                toast.success("Added Successfully");
+                await getUser();
+            }
+        } catch (error) {
+            console.log(error)
+            toast.error("Unable to add");
+        } finally {
+            setLoading(false);
+            setChronic({ conditionName: '', date: '', notes: '' })
+            setIsChronicConditionsOpen(false);
+        }
+    };
 
     useEffect(() => {
-        const getUser = async () => {
-            try{
-                const result = await userAction();
-                if(result.success) {
-                    console.log("user", result.data)
-                    setUser(result);
-                }
-            } catch (error) {
-                console.log("Error getting Current User",error)
-            }
-        }
-
         getUser();
-    }, [router])
+    }, [])
 
-    const handleSave = () => {
-        console.log("Perosnal Information", personalInfo)
-        console.log("Insurance Info", isInsuranceInfo)
-        alert("Changes are updated Successfully")
-        setIsEditable(false)
-    }
+    useEffect(() => {
+        if (currentUser) {
+            setPersonalInformation({
+                fullName: currentUser.personalInfo?.fullName || '',
+                dob: currentUser.personalInfo?.dob || '',
+                gender: currentUser.personalInfo?.gender || '',
+                bloodGroup: currentUser.personalInfo?.bloodGroup || '',
+                phone: currentUser.personalInfo?.phone || '',
+                email: currentUser.personalInfo?.email || ''
+            });
 
-    const handleAddAllergy = () => {
-        const isEmpty = Object.values(allergy).every(value => value.trim() === '');
+            setInsuranceInfo({
+                insuranceInfo: currentUser.insuranceInfo?.insuranceInfo || '',
+                contactName: currentUser.insuranceInfo?.contactName || '',
+                contactNumber: currentUser.insuranceInfo?.contactNumber || ''
+            });
 
-        if (isEmpty) {
-            alert("Please fill at least one field before adding an allergy.");
-            return;
+            setAllergies(currentUser.allergies || []);
+
+            setChronicCondition(currentUser.chronicConditions || []);
         }
-
-        const allergyString = `${allergy.name} - [${allergy.reaction}] (${allergy.type})`;
-
-        setAllergies(prev => [...prev, allergyString]);
-        setAllergy({ name: '', reaction: '', type: '' });
-        setIsAlergiesOpen(false);
-    };
-
-    const handleAddChronic = () => {
-        const isEmpty = Object.values(chronic).every(value => value.trim() === '');
-
-        if (isEmpty) {
-            alert("Please fill at least one field before adding an allergy.");
-            return;
-        }
-
-        const chronicString = `${chronic.conditionName} - ${chronic.date} (${chronic.notes})`;
-
-        setChronicCondition(prev => [...prev, chronicString]);
-        setChronic({ conditionName: '', date: '', notes: '' });
-        setIsChronicConditionsOpen(false);
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem("user");
-        router.push('/');
-    }
-
-    // if (!user) {
-    //     return (
-    //         <div className="flex items-center justify-center min-h-screen">
-    //             <p>Loading...</p>
-    //         </div>
-    //     );
-    // }
+    }, [currentUser]);
 
     return (
         <div className='min-h-screen bg-slate-50'>
-            <div className='w-full flex justify-between items-center py-4 px-40 bg-white border-b-2 border-gray-200'>
-                <div className='text-2xl flex items-center space-x-4 font-semibold font-serif'>
-                    <Shield className='text-teal-500' /> MediLink
-                </div>
-                <div className='flex items-center space-x-4 '>
-                    <span className='text-gray-500 mr-10'> {user?.email} </span>
-                    <LogOut
-                        size={20}
-                        className='mr-2 cursor-pointer hover:text-red-500'
-                        onClick={handleLogout}
-                    />  Sign Out
-                </div>
-            </div>
+            <UpperNavbar />
 
             <div className='w-full flex px-40 py-8 gap-6'>
                 <Navbar
@@ -171,8 +209,8 @@ function Home() {
                                     <input
                                         type='text'
                                         id='fullName'
-                                        onChange={(e) => setPersonalInfo({ ...personalInfo, fullName: e.target.value })}
-                                        value={personalInfo.fullName}
+                                        onChange={(e) => setPersonalInformation({ ...personalInformation, fullName: e.target.value })}
+                                        value={personalInformation.fullName}
                                         placeholder='your Name'
                                         className={`w-full mt-2 p-2 rounded-lg ${isEditable ? `bg-white border-2` : `bg-gray-100`} border-gray-200`}
                                         disabled={!isEditable}
@@ -184,8 +222,8 @@ function Home() {
                                     <input
                                         type='date'
                                         id='dob'
-                                        onChange={(e) => setPersonalInfo({ ...personalInfo, dob: e.target.value })}
-                                        value={personalInfo.dob}
+                                        onChange={(e) => setPersonalInformation({ ...personalInformation, dob: e.target.value })}
+                                        value={personalInformation.dob}
                                         className={`w-full mt-2 p-2 rounded-lg ${isEditable ? `bg-white border-2` : `bg-gray-100`} border border-gray-200`}
                                         disabled={!isEditable}
                                     />
@@ -197,15 +235,15 @@ function Home() {
                                     <label htmlFor="gender" className="text-md">Gender</label>
                                     <select
                                         id="gender"
-                                        onChange={(e) => setPersonalInfo({ ...personalInfo, gender: e.target.value })}
-                                        value={personalInfo.gender}
+                                        onChange={(e) => setPersonalInformation({ ...personalInformation, gender: e.target.value })}
+                                        value={personalInformation.gender}
                                         className={`w-full ${isEditable ? `bg-white border-2` : `bg-gray-100`} border border-gray-300 rounded-xl px-4 mt-2 py-2`}
                                         disabled={!isEditable}
                                     >
                                         <option value="">Select Gender</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
                                     </select>
                                 </div>
 
@@ -213,8 +251,8 @@ function Home() {
                                     <label htmlFor="BloodGroup" className="text-md">Blood Group</label>
                                     <select
                                         id="bloodGroup"
-                                        onChange={(e) => setPersonalInfo({ ...personalInfo, bloodGroup: e.target.value })}
-                                        value={personalInfo.bloodGroup}
+                                        onChange={(e) => setPersonalInformation({ ...personalInformation, bloodGroup: e.target.value })}
+                                        value={personalInformation.bloodGroup}
                                         className={`w-full ${isEditable ? `bg-white border-2` : `bg-gray-100`} border border-gray-300 rounded-xl px-4 py-2 mt-2`}
                                         disabled={!isEditable}
                                     >
@@ -235,10 +273,10 @@ function Home() {
                                 <div className='w-full mt-4'>
                                     <label htmlFor="phone" className="text-md mb-1">Phone</label>
                                     <input
-                                        type='number'
+                                        type='text'
                                         id='mobileNumber'
-                                        onChange={(e) => setPersonalInfo({ ...personalInfo, phone: e.target.value })}
-                                        value={personalInfo.phone}
+                                        onChange={(e) => setPersonalInformation({ ...personalInformation, phone: e.target.value })}
+                                        value={personalInformation.phone}
                                         placeholder='+91 50412 34567'
                                         className={`w-full mt-2 p-2 rounded-lg ${isEditable ? `bg-white border-2` : `bg-gray-100`} border border-gray-200`}
                                         disabled={!isEditable}
@@ -250,8 +288,8 @@ function Home() {
                                     <input
                                         type='email'
                                         id='email'
-                                        onChange={(e) => setPersonalInfo({ ...personalInfo, email: e.target.value })}
-                                        value={personalInfo.email}
+                                        onChange={(e) => setPersonalInformation({ ...personalInformation, email: e.target.value })}
+                                        value={personalInformation.email}
                                         className={`w-full mt-2 p-2 rounded-lg ${isEditable ? `bg-white border-2` : `bg-gray-100`} border border-gray-200`}
                                         disabled={!isEditable}
                                     />
@@ -292,7 +330,7 @@ function Home() {
                                 <div className='w-full mt-4'>
                                     <label htmlFor="EmergencyPhone" className="text-md mb-1">Emergency Phone Number</label>
                                     <input
-                                        type='number'
+                                        type='numeric'
                                         id='EmergencyPhone'
                                         onChange={(e) => setInsuranceInfo({ ...isInsuranceInfo, contactNumber: e.target.value })}
                                         value={isInsuranceInfo.contactNumber}
@@ -366,15 +404,13 @@ function Home() {
 
                             <div className="mt-4">
                                 {allergies.length > 0 ? (
-                                    <ul className="list-disc list-inside text-gray-700">
-                                        {allergies.map((item, index) => (
-                                            <li key={index}>{item}</li>
-                                        ))}
-                                    </ul>
+                                    <AllergyTable allergies={allergies} refreshUser={getUser} />
                                 ) : (
-                                    <p className="text-gray-500">No allergies</p>
+                                    <p className="text-gray-500">No Chronic Condition</p>
                                 )}
                             </div>
+
+                            {/* <AllergyTable allergies={allergies} /> */}
                         </div>
 
                         <div className='bg-blue-50 w-full rounded-xl mt-10 px-4 py-4'>
@@ -421,13 +457,13 @@ function Home() {
                                         <div className='flex gap-2'>
                                             <button
                                                 onClick={handleAddChronic}
-                                                className="bg-blue-600 text-white px-3 py-1 rounded-lg"
+                                                className="bg-blue-600 cursor-pointer text-white px-3 py-1 rounded-lg"
                                             >
                                                 Add
                                             </button>
                                             <button
                                                 onClick={() => setIsChronicConditionsOpen(false)}
-                                                className="bg-gray-200 text-black px-3 py-1 rounded-lg"
+                                                className="bg-gray-200 cursor-pointer text-black px-3 py-1 rounded-lg"
                                             >
                                                 Cancel
                                             </button>
@@ -438,11 +474,7 @@ function Home() {
 
                             <div className="mt-4">
                                 {chronicCondition.length > 0 ? (
-                                    <ul className="list-disc list-inside text-gray-700">
-                                        {chronicCondition.map((item, index) => (
-                                            <li key={index}>{item}</li>
-                                        ))}
-                                    </ul>
+                                    <ChronicTable chronic={chronicCondition} refreshUser={getUser} />
                                 ) : (
                                     <p className="text-gray-500">No Chronic Condition</p>
                                 )}
