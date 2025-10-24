@@ -30,7 +30,7 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
     const allowedTypes = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
     const ext = path.extname(file.originalname).toLowerCase();
-    
+
     if (allowedTypes.includes(ext)) {
         cb(null, true);
     } else {
@@ -52,7 +52,7 @@ const upload = multer({
 router.post('/medical-record/upload', verifyUser, upload.single('file'), async (req, res) => {
     try {
         const { recordType, date, title, description } = req.body;
-        
+
         // Check for file validation error
         if (req.fileValidationError) {
             return res.status(400).json({
@@ -94,7 +94,7 @@ router.post('/medical-record/upload', verifyUser, upload.single('file'), async (
         if (req.file) {
             fs.unlinkSync(req.file.path);
         }
-        
+
         console.error('Error uploading medical record:', error);
         res.status(500).json({
             success: false,
@@ -123,12 +123,12 @@ router.delete('/medical-record/:id', verifyUser, async (req, res) => {
             });
         }
 
-        
+
         await MedicalRecord.findByIdAndDelete(req.params.id);
-        
+
         const filePath = path.join(storageDir, medicalRecord.fileUrl);
 
-        if(fs.existsSync(filePath)) {
+        if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
         }
 
@@ -170,7 +170,7 @@ router.get('/medical-record/download-all', verifyUser, async (req, res) => {
     try {
         // Get all records for user
         const records = await MedicalRecord.find({ userId: req.userId });
-        
+
         if (records.length === 0) {
             return res.status(404).json({
                 success: false,
@@ -196,8 +196,12 @@ router.get('/medical-record/download-all', verifyUser, async (req, res) => {
             if (fs.existsSync(filePath)) {
                 // Create folder structure based on record type
                 const folderName = record.recordType.replace('_', ' ').toUpperCase();
-                const fileName = `${folderName}/${record.date.toISOString().split('T')[0]}-${record.title}${path.extname(record.fileName)}`;
-                
+                const datePart = new Date(record.date).toISOString().split('T')[0];
+                const ext = path.extname(record.fileName);
+                const fileName = `${folderName}/${datePart}-${record.title}${ext}`;
+                // const folderName = record.recordType.replace('_', ' ').toUpperCase();
+                // const fileName = `${folderName}/${record.date.toISOString().split('T')[0]}-${record.title}${path.extname(record.fileName)}`;
+
                 archive.file(filePath, { name: fileName });
             }
         }
@@ -213,7 +217,8 @@ router.get('/medical-record/download-all', verifyUser, async (req, res) => {
             error: error.message
         });
     }
-});
+}
+);
 
 // Error handler for multer errors
 router.use((error, req, res, next) => {
