@@ -11,13 +11,7 @@ function Medication() {
 
     const [activeSection, setActiveSection] = useState('Medication Prescribed');
     const [isPrescribedOpen, setIsPrescribedOpen] = useState(false);
-    const [prescribed, setPrescribed] = useState({
-        medicationName: '',
-        dosage: '',
-        frequency: '',
-        startDate: '',
-        prescribingDoctor: '',
-    })
+    const [prescribedFile, setPrescribedFile] = useState(null);
     const [medList, setMedList] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -38,15 +32,26 @@ function Medication() {
 
     const handleAdd = async () => {
         try {
+            if (!prescribedFile) {
+                toast.error('Please choose a file to upload');
+                return;
+            }
+
             setLoading(true);
-            const res = await addPrescribedMedicationAction(prescribed);
+            const formData = new FormData();
+            formData.append('file', prescribedFile);
+
+            const res = await addPrescribedMedicationAction(formData);
             if (res.success) {
-                toast.success("Data is saved successfully");
+                toast.success('Prescription uploaded');
                 setMedList(prev => [...prev, res.data]);
                 setIsPrescribedOpen(false);
+                setPrescribedFile(null);
+            } else {
+                toast.error(res.message || 'Upload failed');
             }
         } catch (error) {
-            toast.error("Unable to save the data");
+            toast.error('Unable to save the data');
         } finally {
             setLoading(false);
         }
@@ -83,53 +88,17 @@ function Medication() {
                             <div className='space-y-4'>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
-                                        <label htmlFor="medication">Medication Name</label>
+                                        <label htmlFor="prescriptionFile">Choose file (jpg, png, pdf)</label>
                                         <input
-                                            type="text"
-                                            onChange={(e) => setPrescribed({ ...prescribed, medicationName: e.target.value })}
-                                            value={prescribed.medicationName}
-                                            placeholder='e.g., Aspirin'
-                                            className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                            id="prescriptionFile"
+                                            type="file"
+                                            accept=".jpg,.jpeg,.png,.pdf"
+                                            onChange={(e) => setPrescribedFile(e.target.files[0] || null)}
+                                            className="w-full mt-2"
                                         />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="dosage">Dosage</label>
-                                        <input
-                                            type="text"
-                                            onChange={(e) => setPrescribed({ ...prescribed, dosage: e.target.value })}
-                                            value={prescribed.dosage}
-                                            placeholder='e.g., 100mg'
-                                            className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="frequency">Frequency</label>
-                                        <input
-                                            type="text"
-                                            onChange={(e) => setPrescribed({ ...prescribed, frequency: e.target.value })}
-                                            value={prescribed.frequency}
-                                            placeholder='e.g., Once a day'
-                                            className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="startDate">Start Date</label>
-                                        <input
-                                            type="date"
-                                            onChange={(e) => setPrescribed({ ...prescribed, startDate: e.target.value })}
-                                            value={prescribed.startDate}
-                                            className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="prescribedDoctor">Prescribing Doctor</label>
-                                        <input
-                                            type="text"
-                                            onChange={(e) => setPrescribed({ ...prescribed, prescribingDoctor: e.target.value })}
-                                            value={prescribed.prescribingDoctor}
-                                            placeholder='e.g., Dr. Sayam Khajuria'
-                                            className="w-full mt-2  px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                        />
+                                        {prescribedFile && (
+                                            <p className="text-sm text-gray-600 mt-2">Selected: {prescribedFile.name}</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -143,11 +112,11 @@ function Medication() {
                                                 : 'bg-teal-600 hover:bg-teal-700 text-white'
                                             }`}
                                     >
-                                        {loading ? 'Adding...' : 'Add Medication'}
+                                        {loading ? 'Uploading...' : 'Upload Prescription'}
                                     </button>
 
                                     <button
-                                        onClick={() => setIsPrescribedOpen(false)}
+                                        onClick={() => { setIsPrescribedOpen(false); setPrescribedFile(null); }}
                                         disabled={loading}
                                         className={`px-4 py-2 rounded-lg transition-colors ${loading
                                                 ? 'bg-gray-200 cursor-not-allowed text-gray-400'
@@ -158,7 +127,6 @@ function Medication() {
                                     </button>
                                 </div>
                             </div>
-
                         </div>
                     )}
                     {/* Empty state (only show when no records and form is closed) */}
@@ -186,10 +154,8 @@ function Medication() {
                         </div>
                     ) : (
                         <main className="p-6 bg-gray-50 min-h-screen">
-                            <h1 className="text-2xl font-semibold text-gray-800 mb-6">
-                                Prescribed Medication Records
-                            </h1>
-                            <PrescribedRecordsTable records={medList} />
+                            <h1 className="text-2xl font-semibold text-gray-800 mb-6">Prescribed Medication Records</h1>
+                            <PrescribedRecordsTable records={medList} onDelete={(id) => setMedList(prev => prev.filter(r => r._id !== id))} />
                         </main>
                     )}
                 </div>

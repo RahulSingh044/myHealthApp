@@ -31,7 +31,7 @@ router.patch('/', verifyUser, async (req, res) => {
 
         if (profile) {
             // Update existing profile
-            profile.personalInfo = personalInfo;
+            profile.personalInfo = {...personalInfo, email: profile.personalInfo.email};
             profile.insuranceInfo = insuranceInfo;
             profile.emergencyContact = emergencyContact;
             profile.allergies = allergies;
