@@ -43,7 +43,6 @@ router.post('/register', checkUser, async (req, res) => {
         } else {
             // Create new user (unverified)
             user = new User({
-                name,
                 email,
                 password,
                 isEmailVerified: false
@@ -57,7 +56,7 @@ router.post('/register', checkUser, async (req, res) => {
         try {
             // Build minimal personalInfo using available fields
             const personalInfo = {
-                fullName: user.name || '',
+                fullName: name || '',
                 email: user.email
             };
 

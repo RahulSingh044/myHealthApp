@@ -9,7 +9,6 @@ const checkUser = async (req, res, next) => {
     }
 
     const token = req.cookies.token;
-    console.log(req);
 
     // Verify token
     let decoded;
