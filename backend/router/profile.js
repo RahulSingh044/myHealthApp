@@ -283,10 +283,10 @@ router.get('/emergency-access/:accessKey', async (req, res) => {
         
         // Extract only required emergency information
         const emergencyData = {
-            bloodGroup: profile.personalInfo?.bloodGroup,
+            personalInfo: profile.personalInfo,
             allergies: profile.allergies,
             chronicConditions: profile.chronicConditions,
-            emergencyContact: profile.emergencyContact,
+            emergencyContact: profile.insuranceInfo,
             currentMedications: medications
         };
 

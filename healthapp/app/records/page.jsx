@@ -68,6 +68,21 @@ function Records() {
         setPreviewUrl(null);
     };
 
+    const getMedicalRecords = async () => {
+        try {
+            setLoading(true);
+            const res = await getMedicalRecordsAction();
+            if (res.success) {
+                setMedicalRecords(res.data)
+            }
+        } catch (error) {
+            toast.error("Unable to get the Medical Records");
+            console.log(error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const handleUploadToBackend = async () => {
         if (!file) {
             toast.error('Please select a file first');
@@ -85,6 +100,7 @@ function Records() {
             setUploading(true);
             const res = await uploadMedicalAction(data);
             if (res.success) {
+                await getMedicalRecords();
                 toast.success('File uploaded successfully!');
             }
         } catch (error) {
@@ -100,20 +116,6 @@ function Records() {
         }
     };
 
-    const getMedicalRecords = async () => {
-        try {
-            setLoading(true);
-            const res = await getMedicalRecordsAction();
-            if (res.success) {
-                setMedicalRecords(res.data)
-            }
-        } catch (error) {
-            toast.error("Unable to get the Medical Records");
-            console.log(error);
-        } finally {
-            setLoading(false);
-        }
-    }
 
     const downloadRecords = async () => {
         try {
@@ -333,7 +335,7 @@ function Records() {
                     {/* Medical Records Table */}
                     {!loading && medicalRecords.length > 0 && (
                         <div className="mt-8">
-                            <MedicalRecordsTable data={medicalRecords}  refreshRecords={getMedicalRecords}  />
+                            <MedicalRecordsTable data={medicalRecords} refreshRecords={getMedicalRecords} />
                         </div>
                     )}
 

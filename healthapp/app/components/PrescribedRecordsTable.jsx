@@ -6,113 +6,112 @@ import toast from 'react-hot-toast';
 
 const PrescribedRecordsTable = ({ records = [], onDelete }) => {
 
-    const [selectedPreview, setSelectedPreview] = useState(null);
-    const [loadingPreview, setLoadingPreview] = useState(false);
-    const [thumbnails, setThumbnails] = useState({});
-    const thumbnailUrlsToRevoke = useRef([]);
+  const [selectedPreview, setSelectedPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [thumbnails, setThumbnails] = useState({});
+  const thumbnailUrlsToRevoke = useRef([]);
 
-    useEffect(() => {
-        // cleanup on unmount
-        return () => {
-            thumbnailUrlsToRevoke.current.forEach(u => URL.revokeObjectURL(u));
-            thumbnailUrlsToRevoke.current = [];
-            if (selectedPreview && selectedPreview.url) {
-                URL.revokeObjectURL(selectedPreview.url);
-            }
-        };
-    }, []);
+  useEffect(() => {
+    // cleanup on unmount
+    return () => {
+      thumbnailUrlsToRevoke.current.forEach(u => URL.revokeObjectURL(u));
+      thumbnailUrlsToRevoke.current = [];
+      if (selectedPreview && selectedPreview.url) {
+        URL.revokeObjectURL(selectedPreview.url);
+      }
+    };
+  }, []);
 
-    // Preload thumbnails for image records
-    useEffect(() => {
-        let mounted = true;
-        async function loadThumbnails() {
-            // clear previous urls
-            thumbnailUrlsToRevoke.current.forEach(u => URL.revokeObjectURL(u));
-            thumbnailUrlsToRevoke.current = [];
-            setThumbnails({});
+  // Preload thumbnails for image records
+  useEffect(() => {
+    let mounted = true;
+    async function loadThumbnails() {
+      // clear previous urls
+      thumbnailUrlsToRevoke.current.forEach(u => URL.revokeObjectURL(u));
+      thumbnailUrlsToRevoke.current = [];
+      setThumbnails({});
 
-            if (!records || !records.length) return;
+      if (!records || !records.length) return;
 
-            const imageRecords = records.filter(r => {
-                const ft = (r.fileType || '').toLowerCase();
-                return ['png', 'jpg', 'jpeg'].includes(ft);
-            });
+      const imageRecords = records.filter(r => {
+        const ft = (r.fileType || '').toLowerCase();
+        return ['png', 'jpg', 'jpeg'].includes(ft);
+      });
 
-          await Promise.all(imageRecords.map(async (r) => {
-                try {
+      await Promise.all(imageRecords.map(async (r) => {
+        try {
           const res = await fetchPrescribedFile(r._id);
-                    if (res.success) {
-                        const blob = res.data;
-                        const url = URL.createObjectURL(blob);
-                        thumbnailUrlsToRevoke.current.push(url);
-                        if (!mounted) return;
-                        setThumbnails(prev => ({ ...prev, [r._id]: url }));
-                    }
-                } catch (err) {
-                    console.error('Thumbnail load failed for', r._id, err);
-                }
-            }));
+          if (res.success) {
+            const blob = res.data;
+            const url = URL.createObjectURL(blob);
+            thumbnailUrlsToRevoke.current.push(url);
+            if (!mounted) return;
+            setThumbnails(prev => ({ ...prev, [r._id]: url }));
+          }
+        } catch (err) {
+          console.error('Thumbnail load failed for', r._id, err);
         }
-
-        loadThumbnails();
-        return () => {
-            mounted = false;
-            thumbnailUrlsToRevoke.current.forEach(u => URL.revokeObjectURL(u));
-            thumbnailUrlsToRevoke.current = [];
-        };
-    }, [records]);
-
-    const handleDelete = async (id) => {
-        try {
-            const res = await deletePrescribedMedicationAction(id);
-            if (res.success) {
-                toast.success('Prescription deleted');
-                if (typeof onDelete === 'function') onDelete(id);
-            } else {
-                toast.error(res.message || 'Delete failed');
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error('Delete failed');
-        }
+      }));
     }
 
-    const formatBytes = (bytes) => {
-        if (!bytes) return '-';
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(1024));
-        return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
-    }
+    loadThumbnails();
+    return () => {
+      mounted = false;
+      thumbnailUrlsToRevoke.current.forEach(u => URL.revokeObjectURL(u));
+      thumbnailUrlsToRevoke.current = [];
+    };
+  }, [records]);
 
-    const handlePreview = async (record) => {
-        try {
-            setLoadingPreview(true);
-            const res = await fetchPrescribedFile(record._id);
-            if (res.success) {
-                const blob = res.data;
-                const url = URL.createObjectURL(blob);
-                const contentType = res.headers?.['content-type'] || (record.fileType ? (record.fileType === 'pdf' ? 'application/pdf' : (record.fileType === 'png' ? 'image/png' : (record.fileType === 'jpg' || record.fileType === 'jpeg' ? 'image/jpeg' : 'application/octet-stream'))) : 'application/octet-stream');
-                setSelectedPreview({ url, type: contentType, name: record.fileName });
-            } else {
-                toast.error(res.message || 'Unable to fetch file');
-            }
-        } catch (error) {
-            console.error('Preview error:', error);
-            toast.error('Failed to load preview');
-        } finally {
-            setLoadingPreview(false);
-        }
+  const handleDelete = async (id) => {
+    try {
+      const res = await deletePrescribedMedicationAction(id);
+      if (res.success) {
+        toast.success('Prescription deleted');
+        if (typeof onDelete === 'function') onDelete(id);
+      } else {
+        toast.error(res.message || 'Delete failed');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Delete failed');
     }
+  }
+
+  const formatBytes = (bytes) => {
+    if (!bytes) return '-';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+  }
+
+  const handlePreview = async (record) => {
+    try {
+      setLoadingPreview(true);
+      const res = await fetchPrescribedFile(record._id);
+      if (res.success) {
+        const blob = res.data;
+        const url = URL.createObjectURL(blob);
+        const contentType = res.headers?.['content-type'] || (record.fileType ? (record.fileType === 'pdf' ? 'application/pdf' : (record.fileType === 'png' ? 'image/png' : (record.fileType === 'jpg' || record.fileType === 'jpeg' ? 'image/jpeg' : 'application/octet-stream'))) : 'application/octet-stream');
+        setSelectedPreview({ url, type: contentType, name: record.fileName });
+      } else {
+        toast.error(res.message || 'Unable to fetch file');
+      }
+    } catch (error) {
+      console.error('Preview error:', error);
+      toast.error('Failed to load preview');
+    } finally {
+      setLoadingPreview(false);
+    }
+  }
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full border border-gray-200 bg-white rounded-lg shadow-md">
+      <table className="min-w-full border border-gray-200 bg-white rounded shadow-md">
         <thead className="bg-teal-600 text-white">
           <tr>
             <th className="py-3 px-4 text-left">S.no</th>
             <th className="py-3 px-4 text-left">Preview</th>
             <th className="py-3 px-4 text-left">File name</th>
-            <th className="py-3 px-4 text-left">Size</th>
             <th className="py-3 px-4 text-left">Uploaded</th>
             <th className="py-3 px-4 text-left">Action</th>
           </tr>
@@ -126,23 +125,24 @@ const PrescribedRecordsTable = ({ records = [], onDelete }) => {
               >
                 <td className="py-3 px-4 align-middle">{index + 1}</td>
                 <td className="py-3 px-4">
-                    {thumbnails[record._id] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={thumbnails[record._id]} alt={record.fileName} className="w-20 h-16 object-cover rounded" />
-                    ) : (
-                        <div className="w-20 h-16 flex items-center justify-center bg-gray-100 rounded text-sm">{record.fileType || 'file'}</div>
-                    )}
+                  {thumbnails[record._id] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={thumbnails[record._id]} alt={record.fileName} className="w-20 h-16 object-cover rounded" />
+                  ) : (
+                    <div className="w-20 h-16 flex items-center justify-center bg-gray-100 rounded text-sm">{record.fileType || 'file'}</div>
+                  )}
                 </td>
                 <td className="py-3 px-4 align-middle">{record.fileName}</td>
-                <td className="py-3 px-4 align-middle">{formatBytes(record.fileSize)}</td>
                 <td className="py-3 px-4 align-middle">{new Date(record.createdAt).toLocaleString()}</td>
-                <td className="py-3 px-4 align-middle flex gap-3">
+                <td className="py-3 px-4">
+                  <div className='flex justify-center gap-4'>
                     <button onClick={() => handlePreview(record)} title="View">
-                        <Eye className="cursor-pointer" />
+                      <Eye className="cursor-pointer" />
                     </button>
                     <button onClick={() => handleDelete(record._id)}>
-                        <Trash2 className='text-red-500 cursor-pointer' />
+                      <Trash2 className='text-red-500 cursor-pointer' />
                     </button>
+                  </div>
                 </td>
               </tr>
             ))

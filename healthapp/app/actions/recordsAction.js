@@ -142,6 +142,7 @@ export async function fetchPrescribedFile(id) {
             {
                 withCredentials: true,
                 responseType: 'blob',
+                withCredentials: true
             }
         );
 

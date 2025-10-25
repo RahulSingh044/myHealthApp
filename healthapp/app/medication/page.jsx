@@ -88,13 +88,13 @@ function Medication() {
                             <div className='space-y-4'>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
-                                        <label htmlFor="prescriptionFile">Choose file (jpg, png, pdf)</label>
+                                        <label htmlFor="prescriptionFile"></label>
                                         <input
                                             id="prescriptionFile"
                                             type="file"
                                             accept=".jpg,.jpeg,.png,.pdf"
                                             onChange={(e) => setPrescribedFile(e.target.files[0] || null)}
-                                            className="w-full mt-2"
+                                            className="w-full mt-2 border-2 border-gray-500 rounded border-dashed p-4 cursor-pointer"
                                         />
                                         {prescribedFile && (
                                             <p className="text-sm text-gray-600 mt-2">Selected: {prescribedFile.name}</p>
