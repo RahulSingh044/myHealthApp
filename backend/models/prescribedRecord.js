@@ -6,25 +6,24 @@ const prescribedRecordSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    medicationName: {
+    fileUrl: {
         type: String,
-        required: [true, 'Medication name is required']
+        required: true
     },
-    dosage: {
+    fileName: {
         type: String,
-        required: [true, 'Dosage is required']
+        required: true
     },
-    frequency: {
+    fileType: {
         type: String,
-        required: [true, 'Frequency is required']
+        required: true,
+        // Allowed file types as per the form
+        enum: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx']
     },
-    startDate: {
-        type: String,
-        required: [true, 'Start date is required']
-    },
-    prescribingDoctor: {
-        type: String,
-        required: [true, 'Prescribing doctor name is required']
+    fileSize: {
+        type: Number,  // in bytes
+        required: true,
+        max: 10 * 1024 * 1024  // 10MB max as specified in the form
     }
 }, { timestamps: true });
 

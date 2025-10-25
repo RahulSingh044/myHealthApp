@@ -148,7 +148,9 @@ router.delete('/medical-record/:id', verifyUser, async (req, res) => {
 // Get all records for a user
 router.get('/medical-record/all', verifyUser, async (req, res) => {
     try {
-        const records = await MedicalRecord.find({ userId: req.userId }).select('-userId -fileUrl -__v -fileName -fileType -fileSize -lastModified -uploadedAt')
+        // Return explicit whitelist of fields including file metadata so frontend can preview/download
+        const records = await MedicalRecord.find({ userId: req.userId })
+            .select('recordType date title description fileUrl fileName fileType fileSize createdAt _id')
             .sort({ date: -1 });
 
         res.status(200).json({
@@ -162,6 +164,56 @@ router.get('/medical-record/all', verifyUser, async (req, res) => {
             message: 'Error fetching records',
             error: error.message
         });
+    }
+});
+
+// Serve a single medical record file (stream) after verifying ownership
+router.get('/medical-record/file/:id', verifyUser, async (req, res) => {
+    try {
+        const recordId = req.params.id;
+        const record = await MedicalRecord.findById(recordId);
+
+        if (!record) {
+            return res.status(404).json({ success: false, message: 'Record not found' });
+        }
+
+        // Ensure user owns the requested record
+        if (record.userId.toString() !== req.userId) {
+            return res.status(403).json({ success: false, message: 'Unauthorized to access this file' });
+        }
+
+        const filePath = path.join(storageDir, record.fileUrl);
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: 'File missing on server' });
+        }
+
+        // Determine a content type for common extensions
+        const ext = path.extname(record.fileName).toLowerCase();
+        let contentType = 'application/octet-stream';
+        if (ext === '.pdf') contentType = 'application/pdf';
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+        else if (ext === '.png') contentType = 'image/png';
+        else if (ext === '.doc') contentType = 'application/msword';
+        else if (ext === '.docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+        res.setHeader('Content-Type', contentType);
+
+        // For inline preview of images / pdfs use inline disposition, otherwise attachment
+        const inline = contentType.startsWith('image/') || contentType === 'application/pdf';
+        const dispositionType = inline ? 'inline' : 'attachment';
+        // Ensure proper filename in Content-Disposition
+        res.setHeader('Content-Disposition', `${dispositionType}; filename="${encodeURIComponent(record.fileName)}"`);
+
+        const stream = fs.createReadStream(filePath);
+        stream.on('error', (err) => {
+            console.error('File stream error:', err);
+            res.status(500).end();
+        });
+        stream.pipe(res);
+
+    } catch (error) {
+        console.error('Error serving file:', error);
+        res.status(500).json({ success: false, message: 'Error serving file', error: error.message });
     }
 });
 
@@ -220,6 +272,204 @@ router.get('/medical-record/download-all', verifyUser, async (req, res) => {
 }
 );
 
+// --- PRESCRIBED RECORDS: store only prescription image file ---
+// Upload a prescription image
+router.post('/prescribed-record/upload', verifyUser, upload.single('file'), async (req, res) => {
+    try {
+        // Check for file validation error
+        if (req.fileValidationError) {
+            return res.status(400).json({
+                success: false,
+                message: req.fileValidationError
+            });
+        }
+
+        const file = req.file;
+        if (!file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No file uploaded'
+            });
+        }
+
+        const prescribedRecord = new PrescribedRecord({
+            userId: req.userId,
+            fileUrl: file.filename,
+            fileName: file.originalname,
+            fileType: path.extname(file.originalname).substring(1),
+            fileSize: file.size
+        });
+
+        await prescribedRecord.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Prescription uploaded successfully',
+            data: prescribedRecord
+        });
+
+    } catch (error) {
+        // Delete uploaded file if saving fails
+        if (req.file) {
+            try { fs.unlinkSync(req.file.path); } catch (e) { /* ignore */ }
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Error uploading prescription',
+            error: error.message
+        });
+    }
+});
+
+// Update (replace) a prescription image
+// Accepts optional new file (field name 'file'); if provided replaces the stored file.
+router.put('/prescribed-record/update/:id', verifyUser, upload.single('file'), async (req, res) => {
+    try {
+        const record = await PrescribedRecord.findById(req.params.id);
+        if (!record) {
+            // If a new file was uploaded, remove it because record doesn't exist
+            if (req.file) { try { fs.unlinkSync(req.file.path); } catch (e) {} }
+            return res.status(404).json({ success: false, message: 'Prescription record not found' });
+        }
+
+        if (record.userId.toString() !== req.userId) {
+            if (req.file) { try { fs.unlinkSync(req.file.path); } catch (e) {} }
+            return res.status(403).json({ success: false, message: 'Unauthorized to update this record' });
+        }
+
+        // If a new file uploaded, delete old file and update fields
+        if (req.file) {
+            const oldFilePath = path.join(storageDir, record.fileUrl);
+            if (fs.existsSync(oldFilePath)) {
+                try { fs.unlinkSync(oldFilePath); } catch (e) { /* ignore */ }
+            }
+
+            record.fileUrl = req.file.filename;
+            record.fileName = req.file.originalname;
+            record.fileType = path.extname(req.file.originalname).substring(1);
+            record.fileSize = req.file.size;
+        }
+
+        // Save updated record (even if nothing changed to update updatedAt)
+        await record.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Prescription record updated successfully',
+            data: record
+        });
+
+    } catch (error) {
+        // Clean up uploaded file on error
+        if (req.file) { try { fs.unlinkSync(req.file.path); } catch (e) {} }
+
+        res.status(500).json({
+            success: false,
+            message: 'Error updating prescription record',
+            error: error.message
+        });
+    }
+});
+
+// Get all prescription images for a user
+router.get('/prescribed-record/all', verifyUser, async (req, res) => {
+    try {
+        const records = await PrescribedRecord.find({ userId: req.userId })
+            .select('fileUrl fileName fileType fileSize createdAt _id')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: records
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching prescription records',
+            error: error.message
+        });
+    }
+});
+
+// Serve a single prescription image file (stream) after verifying ownership
+router.get('/prescribed-record/file/:id', verifyUser, async (req, res) => {
+    try {
+        const record = await PrescribedRecord.findById(req.params.id);
+        if (!record) {
+            return res.status(404).json({ success: false, message: 'Record not found' });
+        }
+
+        if (record.userId.toString() !== req.userId) {
+            return res.status(403).json({ success: false, message: 'Unauthorized to access this file' });
+        }
+
+        const filePath = path.join(storageDir, record.fileUrl);
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: 'File missing on server' });
+        }
+
+        const ext = path.extname(record.fileName).toLowerCase();
+        let contentType = 'application/octet-stream';
+        if (ext === '.pdf') contentType = 'application/pdf';
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+        else if (ext === '.png') contentType = 'image/png';
+
+        res.setHeader('Content-Type', contentType);
+        const inline = contentType.startsWith('image/') || contentType === 'application/pdf';
+        res.setHeader('Content-Disposition', `${inline ? 'inline' : 'attachment'}; filename="${encodeURIComponent(record.fileName)}"`);
+
+        const stream = fs.createReadStream(filePath);
+        stream.on('error', (err) => {
+            console.error('File stream error:', err);
+            res.status(500).end();
+        });
+        stream.pipe(res);
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error serving file', error: error.message });
+    }
+});
+
+// Delete prescription record and its file
+router.delete('/prescribed-record/:id', verifyUser, async (req, res) => {
+    try {
+        const record = await PrescribedRecord.findById(req.params.id);
+
+        if (!record) {
+            return res.status(404).json({
+                success: false,
+                message: 'Prescription record not found'
+            });
+        }
+
+        if (record.userId.toString() !== req.userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized to delete this record'
+            });
+        }
+
+        await PrescribedRecord.findByIdAndDelete(req.params.id);
+
+        const filePath = path.join(storageDir, record.fileUrl);
+        if (fs.existsSync(filePath)) {
+            try { fs.unlinkSync(filePath); } catch (e) { /* ignore */ }
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Prescription record deleted successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting prescription record',
+            error: error.message
+        });
+    }
+});
+
 // Error handler for multer errors
 router.use((error, req, res, next) => {
     if (error instanceof multer.MulterError) {
@@ -235,119 +485,6 @@ router.use((error, req, res, next) => {
         });
     }
     next(error);
-});
-
-// Add prescribed medication record
-router.post('/prescribed-record/add', verifyUser, async (req, res) => {
-    try {
-        const { medicationName, dosage, frequency, startDate, prescribingDoctor } = req.body;
-
-        const prescribedRecord = new PrescribedRecord({
-            userId: req.userId,
-            medicationName,
-            dosage,
-            frequency,
-            startDate,
-            prescribingDoctor
-        });
-
-        await prescribedRecord.save();
-
-        res.status(201).json({
-            success: true,
-            message: 'Medication record added successfully',
-            data: prescribedRecord
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error adding medication record',
-            error: error.message
-        });
-    }
-});
-
-// Update prescribed medication record
-router.put('/prescribed-record/update/:id', verifyUser, async (req, res) => {
-    try {
-        const { medicationName, dosage, frequency, startDate, prescribingDoctor } = req.body;
-
-        const prescribedRecord = await PrescribedRecord.findByIdAndUpdate(req.params.id, {
-            medicationName,
-            dosage,
-            frequency,
-            startDate,
-            prescribingDoctor
-        }, { new: true });
-
-        res.status(200).json({
-            success: true,
-            message: 'Medication record updated successfully',
-            data: prescribedRecord
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error updating medication record',
-            error: error.message
-        });
-    }
-});
-
-// Get all prescribed medication records for a user
-router.get('/prescribed-record/all', verifyUser, async (req, res) => {
-    try {
-        const records = await PrescribedRecord.find({ userId: req.userId })
-            .select('-userId -__v -createdAt -updatedAt')
-            .sort({ createdAt: -1 });
-
-        res.status(200).json({
-            success: true,
-            data: records
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching medication records',
-            error: error.message
-        });
-    }
-});
-
-// Delete prescribed medication record
-router.delete('/prescribed-record/:id', verifyUser, async (req, res) => {
-    try {
-        const record = await PrescribedRecord.findById(req.params.id);
-
-        if (!record) {
-            return res.status(404).json({
-                success: false,
-                message: 'Medication record not found'
-            });
-        }
-
-        if (record.userId.toString() !== req.userId) {
-            return res.status(403).json({
-                success: false,
-                message: 'Unauthorized to delete this record'
-            });
-        }
-
-        await PrescribedRecord.findByIdAndDelete(req.params.id);
-
-        res.status(200).json({
-            success: true,
-            message: 'Medication record deleted successfully'
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error deleting medication record',
-            error: error.message
-        });
-    }
 });
 
 module.exports = router;

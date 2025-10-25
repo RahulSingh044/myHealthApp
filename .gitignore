@@ -4,6 +4,9 @@ vendor/
 backend/node_modules/
 healthapp/node_modules/
 
+# Storage files
+backend/storage/
+
 # Environment files
 .env
 .env.local
