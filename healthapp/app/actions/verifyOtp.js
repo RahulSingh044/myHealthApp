@@ -2,6 +2,7 @@ import axios from 'axios';
 
 export async function verifyOtpAction(email, otp) {
     try {
+        console.log("backend", email)
         const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/auth/verify-otp`, { email, otp }, { withCredentials: true });
         return res.data;
     } catch (error) {

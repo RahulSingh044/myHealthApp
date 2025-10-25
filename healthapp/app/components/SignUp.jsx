@@ -23,7 +23,8 @@ function SignUp({ isOpen, onClose, onSwitchToLogin, onOpenOtp }) {
             const res = await signupAction(user)
 
             if (res.success) {   
-                onClose();             
+                onClose();
+                localStorage.setItem("userEmail", user.email)             
                 onOpenOtp();
                 setUser({})
             }

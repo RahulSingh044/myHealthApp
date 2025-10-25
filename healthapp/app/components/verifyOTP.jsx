@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LockKeyhole, X } from 'lucide-react';
 import { verifyOtpAction, resendOtpAction } from '../actions/verifyOtp';
+import toast from 'react-hot-toast';
 
 const OTP_LENGTH = 6;
 const INITIAL_TIMER_DURATION = 60;
@@ -12,7 +13,11 @@ export default function VerifyOTP({ isOpen, onClose, onOpenLogin }) {
     const [message, setMessage] = useState({ text: '', type: '' });
     const [isVerifying, setIsVerifying] = useState(false);
     const inputRefs = useRef([]);
-    const userEmail = localStorage.getItem("userMail");
+    const userEmail = localStorage.getItem("userEmail");
+
+    setTimeout(() => {
+        localStorage.removeItem("userMail");
+    }, 30 * 60 * 1000);
 
     // Countdown timer
     useEffect(() => {
@@ -67,7 +72,7 @@ export default function VerifyOTP({ isOpen, onClose, onOpenLogin }) {
 
         if (result.success) {
             // setMessage({ text: 'A new verification code has been sent!', type: 'success' });
-            alert("A new verification code has been sent!")
+            toast.success("A new verification code has been sent!")
             setOtp(Array(OTP_LENGTH).fill(''));
             inputRefs.current[0]?.focus();
         } else {
