@@ -1,8 +1,6 @@
 'use Client';
 import React, { useState } from 'react'
 import { X } from 'lucide-react';
-import Login from './Login';
-import axios from 'axios';
 import OTP from './verifyOTP';
 import { signupAction } from '../actions/auth';
 

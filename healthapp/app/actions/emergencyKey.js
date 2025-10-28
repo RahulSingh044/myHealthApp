@@ -2,7 +2,7 @@ import axios from "axios";
 
 export async function generateKeyAction() {
     try {
-        const res = await axios.post('http://localhost:5000/api/profile/generate-emergency-key',{} ,{ withCredentials: true });
+        const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/api/profile/generate-emergency-key`,{} ,{ withCredentials: true });
         return res.data;
     } catch (error) {
         return {
