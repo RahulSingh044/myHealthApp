@@ -2,9 +2,12 @@ const nodemailer = require('nodemailer');
 
 // Create a transporter using Gmail SMTP with secure configuration
 const transporter = nodemailer.createTransport({
+    // host: 'smtp.gmail.com',
+    // port: 465,
+    // secure: true, // use SSL
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // use SSL
+    port: 587,
+    secure: false, // use STARTTLS
     auth: {
         user: process.env.EMAIL_USER, // Your Gmail address
         pass: process.env.EMAIL_PASS  // Your Gmail app password
@@ -48,7 +51,7 @@ const sendOTPEmail = async (email, otp) => {
 
         // Send email
         const info = await transporter.sendMail(mailOptions);
-        
+
         return {
             success: true,
             messageId: info.messageId
@@ -64,9 +67,11 @@ const sendOTPEmail = async (email, otp) => {
 };
 
 // Verify email configuration
-const verifyEmailConfig = async () => {
+const verifyEmailConfig = () => {
     try {
-        await transporter.verify();
+        transporter.verify((error, success) => {
+            console.log(error || success);
+        });
         console.log('Email configuration is valid');
         return true;
     } catch (error) {
