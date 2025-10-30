@@ -210,6 +210,7 @@ router.post('/login', checkUser, async (req, res) => {
             httpOnly: true,      // Keep httpOnly=true to prevent JavaScript access to the cookie.
             secure: true,      // require HTTPS in production
             sameSite: 'none', // use 'none' for cross-site in prod
+            path: '/',
             maxAge: 24 * 60 * 60 * 1000, // 1 day
         });
 
