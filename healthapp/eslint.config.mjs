@@ -10,7 +10,10 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Include Next.js recommended rules
   ...compat.extends("next/core-web-vitals"),
+
+  // Custom project-wide settings
   {
     ignores: [
       "node_modules/**",
@@ -19,6 +22,14 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+    rules: {
+      // 👇 Disable this ESLint rule globally
+      "react/no-unescaped-entities": "off",
+
+      // Optional — disable common annoying ones
+      "@next/next/no-img-element": "off",
+      "react/display-name": "off",
+    },
   },
 ];
 

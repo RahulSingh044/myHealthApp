@@ -13,11 +13,6 @@ export default function VerifyOTP({ isOpen, onClose, onOpenLogin }) {
     const [message, setMessage] = useState({ text: '', type: '' });
     const [isVerifying, setIsVerifying] = useState(false);
     const inputRefs = useRef([]);
-    const userEmail = localStorage.getItem("userEmail");
-
-    setTimeout(() => {
-        localStorage.removeItem("userMail");
-    }, 30 * 60 * 1000);
 
     // Countdown timer
     useEffect(() => {
@@ -121,7 +116,7 @@ export default function VerifyOTP({ isOpen, onClose, onOpenLogin }) {
                     <LockKeyhole className="w-12 h-12 text-indigo-600 mx-auto mb-3" />
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">Verify Your Account</h1>
                     <p className="text-gray-500">
-                        Please enter the 6-digit code sent to your email address. {userEmail}
+                        Please enter the 6-digit code sent to your email address
                     </p>
                 </header>
 
