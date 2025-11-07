@@ -27,8 +27,8 @@ function Login({ isOpen, onClose, onSwitchToSignUp }) {
                 // Redirect directly if already logged in
                 router.push('/patient');
                 toast.success("Welcome Back ")
-            } else {
-                toast.error("Unable to LogIn")
+            } else if(error.response?.status === 400) {
+                toast.error("Already Logged In")
                 console.error(error);
             }
         } finally {

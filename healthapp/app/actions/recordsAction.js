@@ -128,6 +128,7 @@ export async function fetchMedicalFile(id) {
             headers: res.headers
         };
     } catch (error) {
+        console.log("Error fetching medical file:", error)
         return {
             success: false,
             message: error.response?.data?.message || 'Fetch file failed'

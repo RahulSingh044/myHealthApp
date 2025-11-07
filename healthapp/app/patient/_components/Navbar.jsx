@@ -1,8 +1,6 @@
 import React from 'react'
 import { User } from 'lucide-react'
 import { AlertTriangle } from 'lucide-react'
-import { QrCodeIcon } from 'lucide-react'
-import { Share2 } from 'lucide-react'
 import { FileTextIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -14,7 +12,6 @@ function Navbar({ activeSection, setActiveSection }) {
         { name: 'Medical Records', icon: <FileTextIcon />, link: '/records' },
         { name: 'Medication Prescribed', icon: <AlertTriangle />, link: '/medication' },
         { name: 'Emergency Access', icon: <FileTextIcon />, link: '/emergencyAccess' },
-        { name: 'Share Records', icon: <Share2 /> },
     ]
 
     const handleSectionClick = (SectionName) => {
