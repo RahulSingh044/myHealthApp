@@ -73,11 +73,11 @@ router.post('/register', checkUser, async (req, res) => {
 
         // Generate and send OTP
         const otpDoc = await OTP.createOTP(email);
-        await sendOTPEmail(email, otpDoc.otp);
+        const result = await sendOTPEmail(email, otpDoc.otp);
 
         res.status(201).json({
             success: true,
-            message: 'Registration successful. Please verify your email.'
+            message: `Registration successful. ${result}`
         });
 
     } catch (error) {
