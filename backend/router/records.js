@@ -168,7 +168,7 @@ router.get('/medical-record/all', verifyUser, async (req, res) => {
 });
 
 // Serve a single medical record file (stream) after verifying ownership
-router.get('/medical-record/file/:id', verifyUser, async (req, res) => {
+router.get('/medical-record/file/:id', async (req, res) => {
     try {
         const recordId = req.params.id;
         const record = await MedicalRecord.findById(recordId);
@@ -393,7 +393,7 @@ router.get('/prescribed-record/all', verifyUser, async (req, res) => {
 });
 
 // Serve a single prescription image file (stream) after verifying ownership
-router.get('/prescribed-record/file/:id', verifyUser, async (req, res) => {
+router.get('/prescribed-record/file/:id', async (req, res) => {
     try {
         const record = await PrescribedRecord.findById(req.params.id);
         if (!record) {

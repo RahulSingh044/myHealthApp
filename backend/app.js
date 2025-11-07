@@ -19,7 +19,7 @@ app.use(cookieParser());
 app.use(express.json());
 // Allow Next.js frontend
 app.use(cors({
-  origin: 'http://localhost:3000', // your frontend URL
+  origin: process.env.FRONTEND_URL, // your frontend URL
   credentials: true, // allow cookies to be sent
 }));
 

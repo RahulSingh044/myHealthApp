@@ -279,7 +279,7 @@ router.get('/emergency-access/:accessKey', async (req, res) => {
         }
 
         const profile = await Profile.findOne({ userId: keyDoc.userId });
-        const medications = await PrescribedRecord.find({ userId: keyDoc.userId }).select('-userId -__v -createdAt -updatedAt -_id');
+        const medications = await PrescribedRecord.find({ userId: keyDoc.userId }).select('-userId -__v -createdAt -updatedAt');
         
         // Extract only required emergency information
         const emergencyData = {
