@@ -400,10 +400,6 @@ router.get('/prescribed-record/file/:id', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Record not found' });
         }
 
-        if (record.userId.toString() !== req.userId) {
-            return res.status(403).json({ success: false, message: 'Unauthorized to access this file' });
-        }
-
         const filePath = path.join(storageDir, record.fileUrl);
         if (!fs.existsSync(filePath)) {
             return res.status(404).json({ success: false, message: 'File missing on server' });
