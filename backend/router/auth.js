@@ -73,11 +73,11 @@ router.post('/register', checkUser, async (req, res) => {
 
         // Generate and send OTP
         const otpDoc = await OTP.createOTP(email);
-        await sendOTPEmail(email, otpDoc.otp);
+        const result = await sendOTPEmail(email, otpDoc.otp);
 
         res.status(201).json({
             success: true,
-            message: 'Registration successful. Please verify your email.'
+            message: `Registration successful. ${result}`
         });
 
     } catch (error) {
@@ -205,10 +205,12 @@ router.post('/login', checkUser, async (req, res) => {
         // Generate JWT token
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
+        // Set cookie options so it works correctly with HTTPS in production.
         res.cookie('token', token, {
-            httpOnly: true,      // can't be accessed by JS
-            secure: false,       // set true in production (HTTPS)
-            sameSite: 'lax',     // or 'none' if cross-site (and using HTTPS)
+            httpOnly: true,      // Keep httpOnly=true to prevent JavaScript access to the cookie.
+            secure: true,      // require HTTPS in production
+            sameSite: 'none', // use 'none' for cross-site in prod
+            path: '/',
             maxAge: 24 * 60 * 60 * 1000, // 1 day
         });
 
@@ -260,7 +262,9 @@ router.post('/logout', checkUser, async (req, res) => {
         });
     }
 
-    res.clearCookie('token', { httpOnly: true });
+    // Clear cookie using same secure/sameSite semantics as set above so it is removed correctly in production
+    const isProd = process.env.NODE_ENV === 'production';
+    res.clearCookie('token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
     res.status(200).json({
         success: true,
         message: 'Logout successful'
