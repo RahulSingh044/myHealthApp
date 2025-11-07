@@ -5,6 +5,7 @@ const verifyUser = require('../middleware/verifyUser');
 const EmergencyAccessKey = require('../models/emergencyAccessKey');
 const crypto = require('crypto');
 const PrescribedRecord = require('../models/prescribedRecord');
+const MedicalRecord = require('../models/medicalRecord');
 
 // Get profile
 router.get('/', verifyUser, async (req, res) => {
@@ -280,6 +281,7 @@ router.get('/emergency-access/:accessKey', async (req, res) => {
 
         const profile = await Profile.findOne({ userId: keyDoc.userId });
         const medications = await PrescribedRecord.find({ userId: keyDoc.userId }).select('-userId -__v -createdAt -updatedAt');
+        const medicalRecords = await MedicalRecord.find({ userId: keyDoc.userId }).select('-userId -__v -createdAt -updatedAt');
         
         // Extract only required emergency information
         const emergencyData = {
@@ -287,7 +289,8 @@ router.get('/emergency-access/:accessKey', async (req, res) => {
             allergies: profile.allergies,
             chronicConditions: profile.chronicConditions,
             emergencyContact: profile.insuranceInfo,
-            currentMedications: medications
+            currentMedications: medications,
+            medicalRecords: medicalRecords
         };
 
         res.status(200).json({
