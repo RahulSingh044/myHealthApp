@@ -13,13 +13,12 @@ function EmergencyAcessPage() {
     const [copied, setCopied] = useState(false);
     const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
     const [isVisiblePassword, setIsVisiblePassword] = useState(false);
-    const [accessKey, setAccessKey] = useState("");
+    const [accessKey, setAccessKey] = useState("");4
+    const [qrvalue, setQrValue] = useState("");
 
     const qrRef = useRef();
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000";
-    const qrLink = `${backendUrl}/api/profile/emergency-access/${accessKey}`;
 
-    const accessLink = `http://localhost:3000/emergencyAccess/${accessKey}`
+    const accessLink = `https://my-health-app-mu.vercel.app/emergencyAccess/${accessKey}`
 
     const downloadQR = () => {
         const canvas = qrRef.current; 
@@ -121,7 +120,7 @@ function EmergencyAcessPage() {
                             {isEmergencyOpen ? (
                                 <div className=" py-4">
                                     <div className='w-40 h-40 mx-auto mb-4 shadow-xl'>
-                                        <QRCodeCanvas value={qrLink} size={160} ref={qrRef} />
+                                        <QRCodeCanvas value={accessLink} size={160} ref={qrRef} />
                                     </div>
 
                                     <p className="text-gray-600 mb-6 text-sm">
