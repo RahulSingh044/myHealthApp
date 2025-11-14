@@ -1,67 +1,231 @@
-# MyHealthRecord (MediLink)
+# 🏥 HealthHistory
 
-A secure personal medical-record management platform with emergency QR/access-key sharing.  
-Full-stack: Next.js (frontend) + Express + MongoDB (backend). Designed for easy uploads, previews, safe sharing of emergency info, and fast clinician access.
+*A Secure Digital Medical Records Platform*
 
----
 
-## Quick demo / Showcase ideas
-- Add a short GIF in `healthapp/public/` showing: signup → upload record → generate emergency QR → scan preview.  
-- Suggested screenshots: home hero, records table, preview modal, emergency QR panel.
+<p align="center">
+<img src="https://img.shields.io/badge/Next.js-14-black?logo=next.js" />
+<img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" />
+<img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?logo=tailwindcss&logoColor=white" />
+<img src="https://img.shields.io/badge/Zustand-State%20Management-orange" />
+<img src="https://img.shields.io/badge/Express.js-Backend-lightgrey?logo=express" />
+<img src="https://img.shields.io/badge/MongoDB-Database-47A248?logo=mongodb" />
 
----
+</p>
+<p align="center">
 
-## Feature highlights (what to showcase)
+<img src="https://img.shields.io/github/stars/RahulSingh044/myHealthApp?style=social" />
+<img src="https://img.shields.io/github/forks/RahulSingh044/myHealthApp?style=social" />
+</p>
 
-- Emergency access (QR / one-time key — limited, read-only emergency data)
-  - Frontend UI: [`EmergencyAcessPage`](healthapp/app/components/EmergencyAccessPage.jsx) and route [`healthapp/app/emergencyAccess/[accessKey]/page.jsx`](healthapp/app/emergencyAccess/[accessKey]/page.jsx)
-  - Backend: emergency endpoint in [`backend/router/profile.js`](backend/router/profile.js) (route: GET /api/profile/emergency-access/:accessKey)
 
-- Upload / Preview / Download medical records
-  - Upload UI & flow: [`healthapp/app/components/RecordsPage.jsx`](healthapp/app/components/RecordsPage.jsx)
-  - Table + thumbnail/previews: [`healthapp/app/components/MedicalReportsTable.jsx`](healthapp/app/components/MedicalReportsTable.jsx)
-  - API actions: [`healthapp/app/actions/recordsAction.js`](healthapp/app/actions/recordsAction.js)
-  - Backend: file streaming & zip download: [`backend/router/records.js`](backend/router/records.js)
+------------------------------------------------------------------------
 
-- Prescribed medication uploads + previews
-  - Frontend: [`MedicationPage`](healthapp/app/components/MedicationPage.jsx), [`PrescribedRecordsTable`](healthapp/app/components/PrescribedRecordsTable.jsx)
-  - Backend model: [`backend/models/prescribedRecord.js`](backend/models/prescribedRecord.js)
+## 📌 Overview
 
-- User profile, allergies, chronic conditions
-  - Frontend: [`HomeClient`](healthapp/app/patient/_components/HomeClient.jsx)
-  - Actions: [`healthapp/app/actions/userAction.js`](healthapp/app/actions/userAction.js)
-  - Backend model & routes: [`backend/models/profile.js`](backend/models/profile.js), [`backend/router/profile.js`](backend/router/profile.js)
+**HealthHistory** is a complete medical records management platform
+built using **Next.js**, **Express**, and **MongoDB**.\
+It enables users to securely store health profiles, upload medical
+records, track medications, and share limited emergency access using QR
+codes.
 
-- Authentication & OTP
-  - Frontend OTP UI: [`VerifyOTP`](healthapp/app/components/verifyOTP.jsx)
-  - Email helper: [`backend/middleware/nodemailer.js`](backend/middleware/nodemailer.js)
-  - User model (password hash): [`backend/models/user.js`](backend/models/user.js)
+This project highlights strong **frontend engineering** with a focus on
+responsiveness, usability, and secure data workflows.
 
-- Public marketing / homepage
-  - Frontend entry: [`healthapp/app/page.js`](healthapp/app/page.js), layout: [`healthapp/app/layout.js`](healthapp/app/layout.js)
+------------------------------------------------------------------------
 
----
+## 🚀 Features
 
-## Tech stack & important files
+### 🎨 Frontend (Your Role --- Frontend Engineer)
 
-- Frontend: Next.js (app router) — [`healthapp/package.json`](healthapp/package.json)  
-  - Main files: [`healthapp/app/page.js`](healthapp/app/page.js), [`healthapp/app/layout.js`](healthapp/app/layout.js)
-  - Actions: [`healthapp/app/actions/`](healthapp/app/actions/)
-- Backend: Node + Express + Mongoose — [`backend/app.js`](backend/app.js)  
-  - Routes: [`backend/router/profile.js`](backend/router/profile.js), [`backend/router/records.js`](backend/router/records.js)
-  - Models: [`backend/models/profile.js`](backend/models/profile.js), [`backend/models/medicalRecord.js`](backend/models/medicalRecord.js), [`backend/models/prescribedRecord.js`](backend/models/prescribedRecord.js), [`backend/models/user.js`](backend/models/user.js)
-- Storage: [`backend/storage/`](backend/storage/) (gitignored) — used for uploaded files
+-   Responsive **Next.js App Router UI** with Tailwind and mobile drawer
+    navigation\
+-   **Drag-and-drop file uploads** with preview for images, PDFs, and
+    documents\
+-   Real-time **form validation** with React hooks\
+-   **Medical record preview** with blob streaming\
+-   **OTP login UI**, protected route layout, and client authentication
+    handling\
+-   **Emergency Access UI** with QR generation + read-only preview\
+-   Global state using **Zustand (useUserStore)**\
+-   Reusable components: tables, modals, drawers, forms, skeleton
+    loaders
 
----
+### 🛠 Backend Highlights
 
-## Local Quickstart
+-   Express REST API\
+-   MongoDB + Mongoose models\
+-   OTP delivery (Nodemailer)\
+-   Password hashing (bcrypt)\
+-   Secure file uploads + ZIP downloads (Archiver)\
+-   Emergency access endpoints
 
-Prereqs: Node 18+, npm/yarn, MongoDB (local or Atlas).
+------------------------------------------------------------------------
 
-1) Backend
-```sh
+## 🧱 Architecture Diagram
+
+                            ┌────────────────────────┐
+                            │      Frontend (Next.js)│
+                            │                        │
+                            │  • UI Pages            │
+                            │  • Zustand Store       │
+                            │  • Server Actions      │
+                            └───────────┬────────────┘
+                                        │ API Calls (HTTPS)
+                                        ▼
+                         ┌──────────────────────────────────┐
+                         │            Backend (Express)      │
+                         │                                    │
+                         │  • Auth Controller                 │
+                         │  • OTP Service (Nodemailer)        │
+                         │  • Medical Records Upload          │
+                         │  • Emergency Access Keys           │
+                         └──────────────┬─────────────────────┘
+                                        │ Mongoose ORM
+                                        ▼
+                             ┌──────────────────────────┐
+                             │        MongoDB           │
+                             │  • Users                 │
+                             │  • Profiles              │
+                             │  • Records               │
+                             │  • Medications           │
+                             └──────────────────────────┘
+
+------------------------------------------------------------------------
+
+## 📁 Project Structure
+
+    root
+    │── healthapp/                 # Next.js Frontend
+    │   ├── app/
+    │   ├── components/
+    │   ├── store/                 # Zustand Store
+    │   └── public/
+    │
+    └── backend/                   # Express Backend
+        ├── controllers/
+        ├── models/
+        ├── routes/
+        └── middleware/
+
+------------------------------------------------------------------------
+
+## ⚙️ Tech Stack
+
+### Frontend
+
+-   Next.js (App Router)
+-   React
+-   Tailwind CSS\
+-   Zustand\
+-   React Hot Toast\
+-   TypeScript (optional)
+
+### Backend
+
+-   Express.js\
+-   MongoDB & Mongoose\
+-   Nodemailer\
+-   Bcrypt\
+-   Archiver
+
+------------------------------------------------------------------------
+
+## 🚀 Getting Started
+
+### 1️⃣ Clone the Repository
+
+``` bash
+git clone https://github.com/your-username/HealthHistory
+cd HealthHistory
+```
+
+### 2️⃣ Install Dependencies
+
+#### Frontend
+
+``` bash
+cd healthapp
+npm install
+```
+
+#### Backend
+
+``` bash
 cd backend
 npm install
-# create .env with keys below
-node app.js
 ```
+
+### 3️⃣ Setup Environment Variables
+
+#### healthapp/.env
+
+    NEXT_PUBLIC_API_URL=http://localhost:5000
+
+#### backend/.env
+
+    
+CLIENT_ID=""
+CLIENT_SECRET=""
+EMAIL_USER=your_email
+FRONTEND_URL=http://localhost:3000
+JWT_SECRET=your_jwt_secret_key
+MONGO_URI=mongo_db_uri
+PORT=5000
+REDIRECT_URI=""
+REFRESH_TOKEN=""
+
+
+### 4️⃣ Run the Project
+
+#### Backend
+
+``` bash
+cd backend
+npm start
+```
+
+#### Frontend
+
+``` bash
+cd healthapp
+npm run dev
+```
+
+------------------------------------------------------------------------
+
+## 🔐 Security Features
+
+-   OTP-based login\
+-   Protected routes (frontend)\
+-   Bcrypt password hashing\
+-   File type validation\
+-   Secure environment variables
+
+------------------------------------------------------------------------
+
+## 🔮 Future Enhancements
+
+-   Role-based dashboards (doctor, admin)\
+-   Cloud file storage (S3 / Cloudinary)\
+-   Profile sharing URLs\
+-   Advanced analytics & insights
+
+------------------------------------------------------------------------
+
+## 🤝 Contributing
+
+PRs welcome!\
+Fork → Modify → Pull Request
+
+------------------------------------------------------------------------
+
+## 🧾 License
+
+This project is licensed under the **MIT License**.
+
+------------------------------------------------------------------------
+
+## ⭐ Support the Project
+
+If you like this project, consider giving it a star ⭐ on GitHub!
