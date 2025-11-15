@@ -18,8 +18,9 @@ const app = express();
 app.use(cookieParser());
 app.use(express.json());
 // Allow Next.js frontend
+const allowedOrigins = process.env.FRONTEND_URL?.split(',').map(url => url.trim());
 app.use(cors({
-  origin: process.env.FRONTEND_URL, // your frontend URL
+  origin: allowedOrigins,
   credentials: true, // allow cookies to be sent
 }));
 
