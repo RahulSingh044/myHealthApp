@@ -14,15 +14,16 @@ mongoose.connect(process.env.MONGO_URI, {
 
 const app = express();
 
-// Middleware
-app.use(cookieParser());
-app.use(express.json());
 // Allow Next.js frontend
 const allowedOrigins = process.env.FRONTEND_URL?.split(',').map(url => url.trim());
 app.use(cors({
   origin: allowedOrigins,
   credentials: true, // allow cookies to be sent
 }));
+
+// Middleware
+app.use(cookieParser());
+app.use(express.json());
 
 // Routes
 const authRoutes = require('./router/auth');
